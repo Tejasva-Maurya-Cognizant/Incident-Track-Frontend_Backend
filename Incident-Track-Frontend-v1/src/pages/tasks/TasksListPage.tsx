@@ -1,0 +1,248 @@
+﻿import { useCallback, useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { tasksApi } from "../../features/tasks/api";
+import { authApi } from "../../features/auth/api";
+import type { TaskResponseDTO, TaskStatus } from "../../features/tasks/types";
+import type { UserResponseDto } from "../../features/auth/types";
+import type { PageParams } from "../../types/pagination";
+import { useAuth } from "../../context/AuthContext";
+import TaskStatusBadge from "../../components/common/TaskStatusBadge";
+import Pagination from "../../components/common/Pagination";
+import SortableHeader from "../../components/common/SortableHeader";
+
+const DEFAULT_PARAMS: PageParams = {
+  page: 0,
+  size: 10,
+  sortBy: "createdDate",
+  sortDir: "desc",
+};
+
+const TASK_STATUSES: TaskStatus[] = ["PENDING", "IN_PROGRESS", "COMPLETED"];
+
+export default function TasksListPage() {
+  const { user } = useAuth();
+  const role = user?.role ?? "EMPLOYEE";
+  const isEmployee = role === "EMPLOYEE";
+  const isManager = role === "MANAGER";
+  const navigate = useNavigate();
+
+  const [statusFilter, setStatusFilter] = useState<TaskStatus | "">("");
+  const [params, setParams] = useState<PageParams>(DEFAULT_PARAMS);
+  const [items, setItems] = useState<TaskResponseDTO[]>([]);
+  const [paging, setPaging] = useState({ totalElements: 0, totalPages: 0, page: 0 });
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  // Map of userId → user info for name display in Assigned To column
+  const [userMap, setUserMap] = useState<Record<number, UserResponseDto>>({});
+
+  const load = useCallback(
+    async (p: PageParams) => {
+      setLoading(true);
+      setErr(null);
+      try {
+        let res;
+        if (isEmployee) {
+          // Employee sees only tasks assigned to them
+          res = await tasksApi.listAssignedToMePaged(p);
+        } else if (statusFilter) {
+          // Admin / Manager filtered by status
+          res = await tasksApi.listByStatusPaged(statusFilter, p);
+        } else if (isManager) {
+          // Manager: tasks they assigned
+          res = await tasksApi.listByMePaged(p);
+        } else {
+          // Admin: all tasks
+          res = await tasksApi.listAllPaged(p);
+        }
+        setItems(res.content);
+        setPaging({ totalElements: res.totalElements, totalPages: res.totalPages, page: res.page });
+
+        // Resolve unique assignedTo user IDs to names
+        if (!isEmployee) {
+          const ids = [...new Set(res.content.map((t) => t.assignedTo))];
+          const results = await Promise.allSettled(ids.map((id) => authApi.getUserById(id)));
+          const map: Record<number, UserResponseDto> = {};
+          results.forEach((r, i) => { if (r.status === "fulfilled") map[ids[i]] = r.value; });
+          setUserMap((prev) => ({ ...prev, ...map }));
+        }
+      } catch (e: any) {
+        setErr(e?.response?.data?.message ?? "Failed to load tasks");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [statusFilter, isEmployee, isManager]
+  );
+
+  useEffect(() => {
+    load(params);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params, load]);
+
+  const handleSort = (field: string) => {
+    const newDir =
+      params.sortBy === field && params.sortDir === "asc" ? "desc" : "asc";
+    setParams((p) => ({ ...p, sortBy: field, sortDir: newDir, page: 0 }));
+  };
+
+  const handleStatusFilter = (s: TaskStatus | "") => {
+    setStatusFilter(s);
+    setParams({ ...DEFAULT_PARAMS });
+  };
+
+  const fmtDate = (iso: string | null) => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return (
+      <>
+        <span className="block">{d.toLocaleDateString()}</span>
+        <span className="block text-slate-400">{d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+      </>
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between gap-2 shrink-0">
+        <div>
+          <h1 className="text-base font-semibold text-slate-900">Tasks</h1>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {isEmployee
+              ? "Tasks assigned to you"
+              : isManager
+                ? "Tasks you have assigned"
+                : "All tasks in the system"}
+          </p>
+        </div>
+        {isManager && (
+          <Link to="/tasks/create" className="btn-primary flex items-center gap-1.5 shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Create Task
+          </Link>
+        )}
+      </div>
+
+      {/* ── Filters ── */}
+      {!isEmployee && (
+        <div className="card px-3 py-2 flex flex-wrap gap-1.5 shrink-0" style={{ position: "sticky", top: 0, zIndex: 10, background: "var(--card)" }}>
+          <button
+            onClick={() => handleStatusFilter("")}
+            className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${statusFilter === ""
+              ? "bg-[#175FFA] text-white border-[#175FFA]"
+              : "border-[var(--border)] text-slate-600 hover:bg-[#FAFCFF]"
+              }`}
+          >
+            All
+          </button>
+          {TASK_STATUSES.map((s) => (
+            <button
+              key={s}
+              onClick={() => handleStatusFilter(s)}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${statusFilter === s
+                ? "bg-[#175FFA] text-white border-[#175FFA]"
+                : "border-[var(--border)] text-slate-600 hover:bg-[#FAFCFF]"
+                }`}
+            >
+              {s === "IN_PROGRESS" ? "In Progress" : s.charAt(0) + s.slice(1).toLowerCase()}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── Table card ── */}
+      <div className="card overflow-x-auto">
+        {loading ? (
+          <div className="py-10 text-center text-sm text-slate-500">Loading tasks…</div>
+        ) : err ? (
+          <div className="py-8 text-center text-sm text-red-600">{err}</div>
+        ) : items.length === 0 ? (
+          <div className="py-10 text-center">
+            <div className="text-3xl mb-2">📋</div>
+            <div className="text-sm font-medium text-slate-700">No tasks found</div>
+            <p className="text-xs text-slate-400 mt-1">
+              {isManager ? "Create a task to get started." : "No tasks have been assigned to you yet."}
+            </p>
+          </div>
+        ) : (
+          <table className="w-full text-sm min-w-[580px]">
+            <thead>
+              <tr className="border-b text-left" style={{ borderColor: "var(--border)", background: "#F8FAFD", position: "sticky", top: 0, zIndex: 5 }}>
+                <SortableHeader label="ID" field="taskId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-12" />
+                <SortableHeader label="Title" field="title" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-[180px]" />
+                <th className="px-2 py-2 font-semibold text-slate-600 text-xs">Status</th>
+                <th className="px-2 py-2 font-semibold text-slate-600 text-xs w-[80px]">Incident</th>
+                {!isEmployee && (
+                  <th className="px-2 py-2 font-semibold text-slate-600 text-xs w-[110px]">Assigned To</th>
+                )}
+                <SortableHeader label="Created" field="createdDate" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-[100px]" />
+                <SortableHeader label="Due" field="dueDate" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-[100px]" />
+                <th className="px-2 py-2 font-semibold text-slate-600 text-xs w-[60px]">Act.</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y" style={{ borderColor: "var(--border)" }}>
+              {items.map((task) => (
+                <tr key={task.taskId} className="hover:bg-[#FAFCFF] transition-colors">
+                  <td className="px-2 py-2 text-slate-500 font-mono text-xs">#{task.taskId}</td>
+                  <td className="px-2 py-2">
+                    <span className="font-medium text-slate-900 line-clamp-2 max-w-[180px] block leading-snug text-xs">
+                      {task.title}
+                    </span>
+                  </td>
+                  <td className="px-2 py-2">
+                    <TaskStatusBadge status={task.status} />
+                  </td>
+                  <td className="px-2 py-2 text-slate-600 font-mono text-xs">
+                    <Link
+                      to={`/incidents/${task.incidentId}`}
+                      className="text-[#175FFA] hover:underline"
+                    >
+                      #{task.incidentId}
+                    </Link>
+                  </td>
+                  {!isEmployee && (
+                    <td className="px-2 py-2 text-slate-700 text-xs">
+                      {userMap[task.assignedTo] ? (
+                        <span className="flex flex-col gap-0">
+                          <span className="font-medium text-slate-900 text-xs">{userMap[task.assignedTo].username}</span>
+                          <span className="text-slate-400 font-mono text-[10px]">#{task.assignedTo}</span>
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 font-mono">#{task.assignedTo}</span>
+                      )}
+                    </td>
+                  )}
+                  <td className="px-2 py-2 text-xs text-slate-600 leading-snug">{fmtDate(task.createdDate)}</td>
+                  <td className="px-2 py-2 text-xs text-slate-600 leading-snug">{fmtDate(task.dueDate)}</td>
+                  <td className="px-2 py-2">
+                    <button
+                      onClick={() => navigate(`/tasks/${task.taskId}`)}
+                      className="h-7 px-2 text-xs rounded-md border font-medium hover:bg-[#FAFCFF] transition-colors"
+                      style={{ borderColor: "var(--border)" }}
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        {/* Pagination */}
+        {!loading && !err && paging.totalPages > 0 && (
+          <Pagination
+            page={paging.page}
+            totalPages={paging.totalPages}
+            totalElements={paging.totalElements}
+            size={params.size}
+            onPageChange={(p) => setParams((prev) => ({ ...prev, page: p }))}
+            onSizeChange={(s) => setParams({ ...DEFAULT_PARAMS, size: s })}
+          />
+        )}
+      </div>
+    </div>
+  );
+}

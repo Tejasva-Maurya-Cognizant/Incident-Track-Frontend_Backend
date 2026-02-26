@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+:root {
+  --brand: #175FFA;
+  --brandHover: #0E4CE6;
+  --bg: #F6F8FB;
+  --card: #ffffff;
+  --border: #E6EDF5;
+  --inputBorder: #D7E1EC;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: Inter, system-ui, sans-serif;
+  background: var(--bg);
+}
+
+/* tiny design-system helpers */
+@layer components {
+  .card {
+    @apply bg-white border rounded-[12px];
+    border-color: var(--border);
+  }
+
+  .input {
+    @apply h-9 w-full rounded-[8px] border px-2.5 text-sm outline-none;
+    border-color: var(--inputBorder);
+  }
+
+  .input:focus {
+    box-shadow: 0 0 0 3px rgba(23, 95, 250, 0.12);
+    border-color: var(--brand);
+  }
+
+  .btn-primary {
+    @apply h-9 rounded-[8px] px-3.5 text-sm font-medium text-white;
+    background: var(--brand);
+  }
+
+  .btn-primary:hover {
+    background: var(--brandHover);
+  }
+
+  /* sticky filter bar — sits at top of scrollable <main> */
+  .sticky-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--card);
+  }
+
+  /* sticky thead inside an overflow-x-auto wrapper — use on <thead> */
+  .sticky-thead th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #F8FAFD;
+  }
+}
