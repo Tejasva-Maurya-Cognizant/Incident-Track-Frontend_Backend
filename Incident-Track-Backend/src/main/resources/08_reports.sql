@@ -1,0 +1,67 @@
+INSERT IGNORE INTO reports
+(report_type, scope, scope_ref_id, incident_count, resolved_incident_count, sla_breached_count, sla_compliance_rate, average_resolution_time_hours, start_date, end_date, series_json, metrics_json, generated_by, generated_at)
+VALUES
+(
+ 'SLA_COMPLIANCE',
+ 'GLOBAL',
+ NULL,
+ 7,
+ 2,
+ 1,
+ 85.7,
+ 6.5,
+ DATE_SUB(CURDATE(), INTERVAL 7 DAY),
+ CURDATE(),
+ '{"points":[{"date":"2026-02-09","count":2},{"date":"2026-02-10","count":3},{"date":"2026-02-11","count":2}]}',
+ '{"critical":2,"high":2,"medium":2,"low":1}',
+ (SELECT user_id FROM users WHERE email='it_admin@company.com' LIMIT 1),
+ NOW(6) - INTERVAL 1 HOUR
+),
+(
+ 'DEPARTMENT_PERFORMANCE',
+ 'DEPARTMENT',
+ (SELECT department_id FROM departments WHERE department_name='Information Technology' LIMIT 1),
+ 2,
+ 1,
+ 0,
+ 100.0,
+ 4.2,
+ DATE_SUB(CURDATE(), INTERVAL 30 DAY),
+ CURDATE(),
+ '{"topCategories":["VPN Access Failure","Network Issues"]}',
+ '{"department":"Information Technology","avgResolveHours":4.2}',
+ (SELECT user_id FROM users WHERE email='it_mgr@company.com' LIMIT 1),
+ NOW(6) - INTERVAL 2 HOUR
+),
+(
+ 'VOLUME_TREND',
+ 'CATEGORY',
+ (SELECT category_id FROM category WHERE category_name='IT / Technical' AND sub_category='VPN Access Failure' LIMIT 1),
+ 1,
+ 0,
+ 0,
+ 100.0,
+ 0.0,
+ DATE_SUB(CURDATE(), INTERVAL 14 DAY),
+ CURDATE(),
+ '{"points":[{"date":"2026-02-06","count":0},{"date":"2026-02-08","count":1}]}',
+ '{"category":"VPN Access Failure"}',
+ (SELECT user_id FROM users WHERE email='it_admin@company.com' LIMIT 1),
+ NOW(6) - INTERVAL 3 HOUR
+),
+(
+ 'PERIOD_REPORT',
+ 'PERIOD',
+ NULL,
+ 5,
+ 2,
+ 1,
+ 80.0,
+ 7.8,
+ DATE_SUB(CURDATE(), INTERVAL 5 DAY),
+ DATE_SUB(CURDATE(), INTERVAL 1 DAY),
+ '{"start":"last_5_days","end":"yesterday"}',
+ '{"notes":"Sample period report"}',
+ (SELECT user_id FROM users WHERE email='sec_admin@company.com' LIMIT 1),
+ NOW(6) - INTERVAL 6 HOUR
+);

@@ -1,0 +1,118 @@
+
+############################
+# Maven
+############################
+/target/
+/.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+# src/main/resources/application.properties
+
+# src/main/resources
+# src/test
+target/
+# Compiled class file
+*.class
+
+############################
+# Spring Boot / Resources
+############################
+# Do NOT ignore application.properties or application.yml
+# Do NOT ignore pom.xml
+# Source files are safe
+Documentation
+
+############################
+# STS / Eclipse
+############################
+.settings/
+.classpath
+.project
+.springBeans
+.apt_generated/
+.apt_generated_test/
+.factorypath
+.sts4-cache/
+
+############################
+# Eclipse build output
+############################
+bin/
+bin/**
+
+############################
+# IntelliJ (optional)
+############################
+.idea/
+*.iml
+out/
+
+############################
+# Logs
+############################
+*.log
+
+############################
+# Operating System files
+############################
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Mac
+.DS_Store
+
+############################
+# Git lock files
+############################
+.git/index.lock
+*.lock
+
+############################
+# Temporary files
+############################
+tmp/
+tmp/**
+
+
+
+###############################################################################################
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+
+### env ###
+.env
+
+
+ 
