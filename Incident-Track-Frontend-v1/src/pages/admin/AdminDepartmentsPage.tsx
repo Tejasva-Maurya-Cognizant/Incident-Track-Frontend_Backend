@@ -54,7 +54,7 @@ export default function AdminDepartmentsPage() {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col h-full gap-3">
       <div>
         <h2 className="text-base font-semibold text-slate-900">Departments</h2>
         <p className="text-xs text-slate-500">Create and view departments.</p>
@@ -79,29 +79,31 @@ export default function AdminDepartmentsPage() {
         {err && <div className="text-xs text-red-600 mt-2">{err}</div>}
       </div>
 
-      <div className="card overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-xs uppercase tracking-wide text-slate-500" style={{ position: "sticky", top: 0, zIndex: 5, background: "#F8FAFD" }}>
-              <SortableHeader label="ID" field="departmentId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} />
-              <SortableHeader label="Name" field="departmentName" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} />
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td className="px-2 py-4 text-slate-600 text-xs" colSpan={2}>Loading...</td></tr>
-            ) : items.length === 0 ? (
-              <tr><td className="px-2 py-4 text-slate-600 text-xs" colSpan={2}>No departments found.</td></tr>
-            ) : (
-              items.map((d) => (
-                <tr key={getDepartmentId(d)} className="border-t hover:bg-[#FAFCFF]" style={{ borderColor: "var(--border)" }}>
-                  <td className="px-2 py-2 font-medium text-slate-900 text-xs">{getDepartmentId(d)}</td>
-                  <td className="px-2 py-2 text-slate-700 text-xs">{d.departmentName}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      <div className="card flex flex-col flex-1 overflow-hidden">
+        <div className="overflow-x-auto flex-1">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-xs uppercase tracking-wide text-slate-500" style={{ position: "sticky", top: 0, zIndex: 5, background: "#F8FAFD" }}>
+                <SortableHeader label="ID" field="departmentId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} />
+                <SortableHeader label="Name" field="departmentName" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} />
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td className="px-2 py-4 text-slate-600 text-xs" colSpan={2}>Loading...</td></tr>
+              ) : items.length === 0 ? (
+                <tr><td className="px-2 py-4 text-slate-600 text-xs" colSpan={2}>No departments found.</td></tr>
+              ) : (
+                items.map((d) => (
+                  <tr key={getDepartmentId(d)} className="border-t hover:bg-[#FAFCFF]" style={{ borderColor: "var(--border)" }}>
+                    <td className="px-2 py-2 font-medium text-slate-900 text-xs">{getDepartmentId(d)}</td>
+                    <td className="px-2 py-2 text-slate-700 text-xs">{d.departmentName}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {paging.totalPages > 0 && (
           <Pagination

@@ -50,8 +50,13 @@ public class ComplianceController {
                         @RequestParam(defaultValue = "20") int size,
                         @RequestParam(defaultValue = "timestamp") String sortBy,
                         @RequestParam(defaultValue = "desc") String sortDir) {
-                Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
-                                : Sort.by(sortBy).descending();
+                String resolvedSortBy = switch (sortBy) {
+                        case "incidentId" -> "incident.incidentId";
+                        case "username" -> "user.username";
+                        default -> sortBy;
+                };
+                Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(resolvedSortBy).ascending()
+                                : Sort.by(resolvedSortBy).descending();
                 Pageable pageable = PageRequest.of(page, size, sort);
                 Page<AuditLog> auditPage = auditLogRepository.findAll(pageable);
                 PagedResponse<AuditLogResponseDto> response = PagedResponse.<AuditLogResponseDto>builder()

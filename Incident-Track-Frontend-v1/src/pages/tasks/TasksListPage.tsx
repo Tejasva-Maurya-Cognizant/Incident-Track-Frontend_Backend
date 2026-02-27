@@ -27,6 +27,7 @@ export default function TasksListPage() {
   const navigate = useNavigate();
 
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "">("");
+  const [search, setSearch] = useState("");
   const [params, setParams] = useState<PageParams>(DEFAULT_PARAMS);
   const [items, setItems] = useState<TaskResponseDTO[]>([]);
   const [paging, setPaging] = useState({ totalElements: 0, totalPages: 0, page: 0 });
@@ -87,8 +88,20 @@ export default function TasksListPage() {
 
   const handleStatusFilter = (s: TaskStatus | "") => {
     setStatusFilter(s);
+    setSearch("");
     setParams({ ...DEFAULT_PARAMS });
   };
+
+  const filteredItems = items.filter((task) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      String(task.taskId).includes(q) ||
+      task.title.toLowerCase().includes(q) ||
+      String(task.incidentId).includes(q) ||
+      (userMap[task.assignedTo]?.username ?? "").toLowerCase().includes(q)
+    );
+  });
 
   const fmtDate = (iso: string | null) => {
     if (!iso) return "—";
@@ -102,7 +115,7 @@ export default function TasksListPage() {
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 h-full">
       {/* ── Header ── */}
       <div className="flex items-center justify-between gap-2 shrink-0">
         <div>
@@ -125,110 +138,128 @@ export default function TasksListPage() {
         )}
       </div>
 
-      {/* ── Filters ── */}
-      {!isEmployee && (
-        <div className="card px-3 py-2 flex flex-wrap gap-1.5 shrink-0" style={{ position: "sticky", top: 0, zIndex: 10, background: "var(--card)" }}>
-          <button
-            onClick={() => handleStatusFilter("")}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${statusFilter === ""
-              ? "bg-[#175FFA] text-white border-[#175FFA]"
-              : "border-[var(--border)] text-slate-600 hover:bg-[#FAFCFF]"
-              }`}
+      {/* Toolbar */}
+      <div className="card p-2 flex items-center gap-2 flex-nowrap shrink-0">
+        {/* Search */}
+        <div className="relative flex-[2] min-w-0">
+          <svg
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none"
+            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
           >
-            All
-          </button>
-          {TASK_STATUSES.map((s) => (
-            <button
-              key={s}
-              onClick={() => handleStatusFilter(s)}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${statusFilter === s
-                ? "bg-[#175FFA] text-white border-[#175FFA]"
-                : "border-[var(--border)] text-slate-600 hover:bg-[#FAFCFF]"
-                }`}
-            >
-              {s === "IN_PROGRESS" ? "In Progress" : s.charAt(0) + s.slice(1).toLowerCase()}
-            </button>
-          ))}
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+          </svg>
+          <input
+            className="input pl-8 h-8 text-xs w-full"
+            placeholder="Search by task ID, title, incident ID, assignee…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
-      )}
+        {!isEmployee && (
+          <select
+            className="input h-8 text-xs bg-white flex-1 min-w-0"
+            value={statusFilter}
+            onChange={(e) => handleStatusFilter(e.target.value as TaskStatus | "")}
+          >
+            <option value="">All Statuses</option>
+            {TASK_STATUSES.map((s) => (
+              <option key={s} value={s}>{s === "IN_PROGRESS" ? "In Progress" : s.charAt(0) + s.slice(1).toLowerCase()}</option>
+            ))}
+          </select>
+        )}
+        <span className="shrink-0 text-xs text-slate-400 whitespace-nowrap">
+          {filteredItems.length} result{filteredItems.length !== 1 ? "s" : ""}
+        </span>
+        {(search || statusFilter) && (
+          <button
+            className="shrink-0 h-8 px-3 rounded-[8px] bg-white border text-xs text-slate-600 hover:bg-[#FAFCFF] whitespace-nowrap"
+            style={{ borderColor: "var(--border)" }}
+            onClick={() => { setSearch(""); handleStatusFilter(""); }}
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
 
-      {/* ── Table card ── */}
-      <div className="card overflow-x-auto">
+      {/* Table card */}
+      <div className="card flex flex-col flex-1 overflow-hidden">
         {loading ? (
           <div className="py-10 text-center text-sm text-slate-500">Loading tasks…</div>
         ) : err ? (
           <div className="py-8 text-center text-sm text-red-600">{err}</div>
-        ) : items.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <div className="py-10 text-center">
             <div className="text-3xl mb-2">📋</div>
-            <div className="text-sm font-medium text-slate-700">No tasks found</div>
+            <div className="text-sm font-medium text-slate-700">{search ? "No tasks match your search" : "No tasks found"}</div>
             <p className="text-xs text-slate-400 mt-1">
-              {isManager ? "Create a task to get started." : "No tasks have been assigned to you yet."}
+              {search ? "Try a different keyword." : isManager ? "Create a task to get started." : "No tasks have been assigned to you yet."}
             </p>
           </div>
         ) : (
-          <table className="w-full text-sm min-w-[580px]">
-            <thead>
-              <tr className="border-b text-left" style={{ borderColor: "var(--border)", background: "#F8FAFD", position: "sticky", top: 0, zIndex: 5 }}>
-                <SortableHeader label="ID" field="taskId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-12" />
-                <SortableHeader label="Title" field="title" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-[180px]" />
-                <th className="px-2 py-2 font-semibold text-slate-600 text-xs">Status</th>
-                <th className="px-2 py-2 font-semibold text-slate-600 text-xs w-[80px]">Incident</th>
-                {!isEmployee && (
-                  <th className="px-2 py-2 font-semibold text-slate-600 text-xs w-[110px]">Assigned To</th>
-                )}
-                <SortableHeader label="Created" field="createdDate" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-[100px]" />
-                <SortableHeader label="Due" field="dueDate" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-[100px]" />
-                <th className="px-2 py-2 font-semibold text-slate-600 text-xs w-[60px]">Act.</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y" style={{ borderColor: "var(--border)" }}>
-              {items.map((task) => (
-                <tr key={task.taskId} className="hover:bg-[#FAFCFF] transition-colors">
-                  <td className="px-2 py-2 text-slate-500 font-mono text-xs">#{task.taskId}</td>
-                  <td className="px-2 py-2">
-                    <span className="font-medium text-slate-900 line-clamp-2 max-w-[180px] block leading-snug text-xs">
-                      {task.title}
-                    </span>
-                  </td>
-                  <td className="px-2 py-2">
-                    <TaskStatusBadge status={task.status} />
-                  </td>
-                  <td className="px-2 py-2 text-slate-600 font-mono text-xs">
-                    <Link
-                      to={`/incidents/${task.incidentId}`}
-                      className="text-[#175FFA] hover:underline"
-                    >
-                      #{task.incidentId}
-                    </Link>
-                  </td>
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full text-sm min-w-[580px]">
+              <thead>
+                <tr className="border-b text-left" style={{ borderColor: "var(--border)", background: "#F8FAFD", position: "sticky", top: 0, zIndex: 5 }}>
+                  <SortableHeader label="ID" field="taskId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-12" />
+                  <SortableHeader label="Title" field="title" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-[180px]" />
+                  <th className="px-2 py-2 font-semibold text-slate-600 text-xs">Status</th>
+                  <th className="px-2 py-2 font-semibold text-slate-600 text-xs w-[80px]">Incident</th>
                   {!isEmployee && (
-                    <td className="px-2 py-2 text-slate-700 text-xs">
-                      {userMap[task.assignedTo] ? (
-                        <span className="flex flex-col gap-0">
-                          <span className="font-medium text-slate-900 text-xs">{userMap[task.assignedTo].username}</span>
-                          <span className="text-slate-400 font-mono text-[10px]">#{task.assignedTo}</span>
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 font-mono">#{task.assignedTo}</span>
-                      )}
-                    </td>
+                    <th className="px-2 py-2 font-semibold text-slate-600 text-xs w-[110px]">Assigned To</th>
                   )}
-                  <td className="px-2 py-2 text-xs text-slate-600 leading-snug">{fmtDate(task.createdDate)}</td>
-                  <td className="px-2 py-2 text-xs text-slate-600 leading-snug">{fmtDate(task.dueDate)}</td>
-                  <td className="px-2 py-2">
-                    <button
-                      onClick={() => navigate(`/tasks/${task.taskId}`)}
-                      className="h-7 px-2 text-xs rounded-md border font-medium hover:bg-[#FAFCFF] transition-colors"
-                      style={{ borderColor: "var(--border)" }}
-                    >
-                      View
-                    </button>
-                  </td>
+                  <SortableHeader label="Created" field="createdDate" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-[100px]" />
+                  <SortableHeader label="Due" field="dueDate" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-[100px]" />
+                  <th className="px-2 py-2 font-semibold text-slate-600 text-xs w-[60px]">Act.</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y" style={{ borderColor: "var(--border)" }}>
+                {filteredItems.map((task) => (
+                  <tr key={task.taskId} className="hover:bg-[#FAFCFF] transition-colors">
+                    <td className="px-2 py-2 text-slate-500 font-mono text-xs">#{task.taskId}</td>
+                    <td className="px-2 py-2">
+                      <span className="font-medium text-slate-900 line-clamp-2 max-w-[180px] block leading-snug text-xs">
+                        {task.title}
+                      </span>
+                    </td>
+                    <td className="px-2 py-2">
+                      <TaskStatusBadge status={task.status} />
+                    </td>
+                    <td className="px-2 py-2 text-slate-600 font-mono text-xs">
+                      <Link
+                        to={`/incidents/${task.incidentId}`}
+                        className="text-[#175FFA] hover:underline"
+                      >
+                        #{task.incidentId}
+                      </Link>
+                    </td>
+                    {!isEmployee && (
+                      <td className="px-2 py-2 text-slate-700 text-xs">
+                        {userMap[task.assignedTo] ? (
+                          <span className="flex flex-col gap-0">
+                            <span className="font-medium text-slate-900 text-xs">{userMap[task.assignedTo].username}</span>
+                            <span className="text-slate-400 font-mono text-[10px]">#{task.assignedTo}</span>
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-mono">#{task.assignedTo}</span>
+                        )}
+                      </td>
+                    )}
+                    <td className="px-2 py-2 text-xs text-slate-600 leading-snug">{fmtDate(task.createdDate)}</td>
+                    <td className="px-2 py-2 text-xs text-slate-600 leading-snug">{fmtDate(task.dueDate)}</td>
+                    <td className="px-2 py-2">
+                      <button
+                        onClick={() => navigate(`/tasks/${task.taskId}`)}
+                        className="h-7 px-2 text-xs rounded-md border font-medium hover:bg-[#FAFCFF] transition-colors"
+                        style={{ borderColor: "var(--border)" }}
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {/* Pagination */}

@@ -177,9 +177,9 @@ export default function AdminAuditLogPage() {
             </div>
 
             {/* Toolbar */}
-            <div className="card p-2 flex flex-wrap gap-2 items-center">
+            <div className="card p-2 flex items-center gap-2 flex-nowrap">
                 {/* Search */}
-                <div className="relative flex-1 min-w-[180px]">
+                <div className="relative flex-[2] min-w-0">
                     <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1 0 4.5 4.5a7.5 7.5 0 0 0 12.15 12.15z" />
                     </svg>
@@ -193,7 +193,7 @@ export default function AdminAuditLogPage() {
 
                 {/* Action type filter */}
                 <select
-                    className="input h-8 text-xs bg-white min-w-[180px]"
+                    className="input h-8 text-xs bg-white flex-1 min-w-0"
                     value={actionFilter}
                     onChange={(e) => handleActionFilter(e.target.value as ActionType | "")}
                 >
@@ -203,10 +203,15 @@ export default function AdminAuditLogPage() {
                     ))}
                 </select>
 
+                {/* Result count */}
+                <span className="shrink-0 text-xs text-slate-400 whitespace-nowrap">
+                    {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+                </span>
+
                 {/* Clear filters */}
                 {(search || actionFilter) && (
                     <button
-                        className="h-8 px-3 rounded-[8px] bg-white border text-xs text-slate-600 hover:bg-[#FAFCFF] whitespace-nowrap"
+                        className="shrink-0 h-8 px-3 rounded-[8px] bg-white border text-xs text-slate-600 hover:bg-[#FAFCFF] whitespace-nowrap"
                         style={{ borderColor: "var(--border)" }}
                         onClick={() => { setSearch(""); handleActionFilter(""); }}
                     >
@@ -228,7 +233,7 @@ export default function AdminAuditLogPage() {
                                 <SortableHeader label="Log ID" field="logId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-3 py-2 w-20" />
                                 <SortableHeader label="Timestamp" field="timestamp" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-44" />
                                 <SortableHeader label="Action" field="actionType" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2" />
-                                <SortableHeader label="User" field="username" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2" />
+                                <th className="text-left px-2 py-2 text-xs uppercase tracking-wide text-slate-500">User</th>
                                 <SortableHeader label="Incident" field="incidentId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-24" />
                                 <th className="text-left px-2 py-2 text-xs uppercase tracking-wide text-slate-500 w-64">Details</th>
                                 <th className="px-2 py-2 w-16" />

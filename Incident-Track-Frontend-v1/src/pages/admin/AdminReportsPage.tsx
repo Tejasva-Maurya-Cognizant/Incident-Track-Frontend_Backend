@@ -191,7 +191,7 @@ function ReportDetailDrawer({ report, onClose }: { report: ReportResponseDto; on
 }
 
 // ── Report History Table ──────────────────────────────────────────────────────
-type HistSortField = "incidentCount" | "resolvedIncidentCount" | "slaBreachedCount" | "slaComplianceRate" | "generatedAt";
+type HistSortField = "reportId" | "incidentCount" | "resolvedIncidentCount" | "slaBreachedCount" | "slaComplianceRate" | "generatedAt";
 
 interface ReportHistoryTableProps {
     reports: ReportResponseDto[];
@@ -219,6 +219,7 @@ function ReportHistoryTable({ reports, onView }: Pick<ReportHistoryTableProps, "
         let av: any = a[sortField];
         let bv: any = b[sortField];
         if (sortField === "generatedAt") { av = new Date(av).getTime(); bv = new Date(bv).getTime(); }
+        if (sortField === "reportId") { av = Number(av); bv = Number(bv); }
         if (av < bv) return sortDir === "asc" ? -1 : 1;
         if (av > bv) return sortDir === "asc" ? 1 : -1;
         return 0;
@@ -241,7 +242,7 @@ function ReportHistoryTable({ reports, onView }: Pick<ReportHistoryTableProps, "
                 <table className="w-full text-xs border-collapse min-w-[780px]">
                     <thead>
                         <tr className="border-b" style={{ borderColor: "var(--border)", background: "#F8FAFD" }}>
-                            <th className="text-left px-3 py-2 text-slate-500 font-medium uppercase tracking-wide text-[10px]">ID</th>
+                            {thSort("reportId", "ID", "left")}
                             <th className="text-left px-2 py-2 text-slate-500 font-medium uppercase tracking-wide text-[10px]">Type</th>
                             <th className="text-left px-2 py-2 text-slate-500 font-medium uppercase tracking-wide text-[10px]">Scope</th>
                             <th className="text-left px-2 py-2 text-slate-500 font-medium uppercase tracking-wide text-[10px]">Period</th>

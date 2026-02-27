@@ -335,7 +335,7 @@ export default function AdminUsersPage() {
                 />
             )}
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col h-full gap-3">
                 {/* Header */}
                 <div className="flex items-center justify-between gap-2 shrink-0">
                     <div>
@@ -353,119 +353,118 @@ export default function AdminUsersPage() {
                     </button>
                 </div>
 
-                {/* Filters */}
-                <div className="card p-3 shrink-0" style={{ position: "sticky", top: 0, zIndex: 10 }}>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        <div>
-                            <label className="text-xs text-slate-600">Search</label>
-                            <input
-                                className="input mt-0.5"
-                                placeholder="Username or email…"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs text-slate-600">Role</label>
-                            <select className="input mt-0.5 bg-white" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as any)}>
-                                <option value="">All roles</option>
-                                <option value="ADMIN">ADMIN</option>
-                                <option value="MANAGER">MANAGER</option>
-                                <option value="EMPLOYEE">EMPLOYEE</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="text-xs text-slate-600">Status</label>
-                            <select className="input mt-0.5 bg-white" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)}>
-                                <option value="">All statuses</option>
-                                <option value="ACTIVE">ACTIVE</option>
-                                <option value="INACTIVE">INACTIVE</option>
-                            </select>
-                        </div>
-                        <div className="flex items-end">
-                            <button
-                                className="h-9 w-full rounded-[8px] bg-white border text-xs font-medium hover:bg-[#FAFCFF]"
-                                style={{ borderColor: "var(--border)" }}
-                                onClick={() => { setSearch(""); setRoleFilter(""); setStatusFilter(""); }}
-                            >
-                                Clear filters
-                            </button>
-                        </div>
+                {/* Toolbar */}
+                <div className="card p-2 flex items-center gap-2 flex-nowrap shrink-0">
+                    <div className="relative flex-[2] min-w-0">
+                        <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1 0 4.5 4.5a7.5 7.5 0 0 0 12.15 12.15z" />
+                        </svg>
+                        <input
+                            className="input pl-8 h-8 text-xs w-full"
+                            placeholder="Search username or email…"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
                     </div>
-                    {err && <div className="text-xs text-red-600 mt-2">{err}</div>}
+                    <select className="input h-8 text-xs bg-white flex-1 min-w-0" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as any)}>
+                        <option value="">All Roles</option>
+                        <option value="ADMIN">ADMIN</option>
+                        <option value="MANAGER">MANAGER</option>
+                        <option value="EMPLOYEE">EMPLOYEE</option>
+                    </select>
+                    <select className="input h-8 text-xs bg-white flex-1 min-w-0" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)}>
+                        <option value="">All Statuses</option>
+                        <option value="ACTIVE">ACTIVE</option>
+                        <option value="INACTIVE">INACTIVE</option>
+                    </select>
+                    <span className="shrink-0 text-xs text-slate-400 whitespace-nowrap">
+                        {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+                    </span>
+                    {(search || roleFilter || statusFilter) && (
+                        <button
+                            className="shrink-0 h-8 px-3 rounded-[8px] bg-white border text-xs text-slate-600 hover:bg-[#FAFCFF] whitespace-nowrap"
+                            style={{ borderColor: "var(--border)" }}
+                            onClick={() => { setSearch(""); setRoleFilter(""); setStatusFilter(""); }}
+                        >
+                            Clear filters
+                        </button>
+                    )}
                 </div>
+                {err && <div className="text-xs text-red-600 shrink-0">{err}</div>}
 
-                {/* Table */}
-                <div className="card overflow-x-auto">
-                    <table className="w-full text-sm min-w-[700px]">
-                        <thead>
-                            <tr
-                                className="text-xs uppercase tracking-wide text-slate-500 border-b"
-                                style={{ position: "sticky", top: 0, zIndex: 5, background: "#F8FAFD", borderColor: "var(--border)" }}
-                            >
-                                <SortableHeader label="ID" field="userId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-14" />
-                                <SortableHeader label="Username" field="username" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-36" />
-                                <SortableHeader label="Email" field="email" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-52" />
-                                <th className="text-left px-2 py-2 w-24">Role</th>
-                                <SortableHeader label="Department" field="departmentId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-32" />
-                                <th className="text-left px-2 py-2 w-24">Status</th>
-                                <th className="text-right px-2 py-2 w-36">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr>
-                                    <td className="px-2 py-6 text-slate-400 text-xs" colSpan={7}>Loading…</td>
+                {/* Table card */}
+                <div className="card flex flex-col flex-1 overflow-hidden">
+                    <div className="overflow-x-auto flex-1">
+                        <table className="w-full text-sm min-w-[700px]">
+                            <thead>
+                                <tr
+                                    className="text-xs uppercase tracking-wide text-slate-500 border-b"
+                                    style={{ position: "sticky", top: 0, zIndex: 5, background: "#F8FAFD", borderColor: "var(--border)" }}
+                                >
+                                    <SortableHeader label="ID" field="userId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-14" />
+                                    <SortableHeader label="Username" field="username" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-36" />
+                                    <SortableHeader label="Email" field="email" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-52" />
+                                    <th className="text-left px-2 py-2 w-24">Role</th>
+                                    <SortableHeader label="Department" field="departmentId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-32" />
+                                    <th className="text-left px-2 py-2 w-24">Status</th>
+                                    <th className="text-right px-2 py-2 w-36">Actions</th>
                                 </tr>
-                            ) : filtered.length === 0 ? (
-                                <tr>
-                                    <td className="px-2 py-6 text-slate-400 text-xs" colSpan={7}>No users found.</td>
-                                </tr>
-                            ) : (
-                                filtered.map((u) => (
-                                    <tr key={u.userId} className="border-t hover:bg-[#FAFCFF] transition" style={{ borderColor: "var(--border)" }}>
-                                        <td className="px-2 py-2 text-xs font-mono text-slate-400">#{u.userId}</td>
-                                        <td className="px-2 py-2 text-xs font-semibold text-slate-900">{u.username}</td>
-                                        <td className="px-2 py-2 text-xs text-slate-600 max-w-[200px] truncate">{u.email}</td>
-                                        <td className="px-2 py-2"><RoleBadge role={u.role} /></td>
-                                        <td className="px-2 py-2 text-xs text-slate-600">{deptName(u.departmentId)}</td>
-                                        <td className="px-2 py-2">
-                                            {/* Status dropdown — toggles ACTIVE ↔ INACTIVE */}
-                                            <select
-                                                className="text-[10px] font-semibold rounded-full px-2 py-0.5 border-0 outline-none"
-                                                style={{
-                                                    background: u.status === "ACTIVE" ? "#DCFCE7" : "#FEE2E2",
-                                                    color: u.status === "ACTIVE" ? "#15803D" : "#DC2626",
-                                                    cursor: "pointer",
-                                                }}
-                                                value={u.status}
-                                                disabled={togglingId === u.userId}
-                                                onChange={() => handleToggleStatus(u)}
-                                            >
-                                                <option value="ACTIVE">ACTIVE</option>
-                                                <option value="INACTIVE">INACTIVE</option>
-                                            </select>
-                                        </td>
-                                        <td className="px-2 py-2 text-right">
-                                            <div className="inline-flex gap-1">
-                                                <button
-                                                    onClick={() => setEditUser(u)}
-                                                    className="h-7 px-2.5 rounded-[6px] bg-white border text-xs font-medium hover:bg-[#FAFCFF] inline-flex items-center gap-1"
-                                                    style={{ borderColor: "var(--border)" }}
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6-6 3 3-6 6H9v-3z" />
-                                                    </svg>
-                                                    Edit
-                                                </button>
-                                            </div>
-                                        </td>
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    <tr>
+                                        <td className="px-2 py-6 text-slate-400 text-xs" colSpan={7}>Loading…</td>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                ) : filtered.length === 0 ? (
+                                    <tr>
+                                        <td className="px-2 py-6 text-slate-400 text-xs" colSpan={7}>No users found.</td>
+                                    </tr>
+                                ) : (
+                                    filtered.map((u) => (
+                                        <tr key={u.userId} className="border-t hover:bg-[#FAFCFF] transition" style={{ borderColor: "var(--border)" }}>
+                                            <td className="px-2 py-2 text-xs font-mono text-slate-400">#{u.userId}</td>
+                                            <td className="px-2 py-2 text-xs font-semibold text-slate-900">{u.username}</td>
+                                            <td className="px-2 py-2 text-xs text-slate-600 max-w-[200px] truncate">{u.email}</td>
+                                            <td className="px-2 py-2"><RoleBadge role={u.role} /></td>
+                                            <td className="px-2 py-2 text-xs text-slate-600">{deptName(u.departmentId)}</td>
+                                            <td className="px-2 py-2">
+                                                {/* Status dropdown — toggles ACTIVE ↔ INACTIVE */}
+                                                <select
+                                                    className="text-[10px] font-semibold rounded-full px-2 py-0.5 border-0 outline-none"
+                                                    style={{
+                                                        background: u.status === "ACTIVE" ? "#DCFCE7" : "#FEE2E2",
+                                                        color: u.status === "ACTIVE" ? "#15803D" : "#DC2626",
+                                                        cursor: "pointer",
+                                                    }}
+                                                    value={u.status}
+                                                    disabled={togglingId === u.userId}
+                                                    onChange={() => handleToggleStatus(u)}
+                                                >
+                                                    <option value="ACTIVE">ACTIVE</option>
+                                                    <option value="INACTIVE">INACTIVE</option>
+                                                </select>
+                                            </td>
+                                            <td className="px-2 py-2 text-right">
+                                                <div className="inline-flex gap-1">
+                                                    <button
+                                                        onClick={() => setEditUser(u)}
+                                                        className="h-7 px-2.5 rounded-[6px] bg-white border text-xs font-medium hover:bg-[#FAFCFF] inline-flex items-center gap-1"
+                                                        style={{ borderColor: "var(--border)" }}
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6-6 3 3-6 6H9v-3z" />
+                                                        </svg>
+                                                        Edit
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
 
+                    </div>
                     {paging.totalPages > 0 && (
                         <Pagination
                             page={paging.page}
