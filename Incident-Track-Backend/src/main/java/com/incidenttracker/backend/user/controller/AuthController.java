@@ -181,9 +181,9 @@ public class AuthController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PatchMapping("/deactivateUser/{id}")
-    public ResponseEntity<String> deactivateUser(@PathVariable Long id) {
-        return adminService.deactivateUser(id);
+    @PatchMapping("/toggleUserStatus/{id}")
+    public ResponseEntity<String> toggleUserStatus(@PathVariable Long id) {
+        return adminService.toggleUserStatus(id);
     }
 
     // @PreAuthorize("hasRole('ADMIN')")

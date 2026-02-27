@@ -16,12 +16,14 @@ export default function Sidebar() {
     { to: "/", label: "Home", roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
     { to: "/incidents", label: "Incidents", roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
     { to: "/tasks", label: "Tasks", roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
-    { to: "/reports", label: "Reports", roles: ["ADMIN", "MANAGER"] },
     { to: "/admin/users", label: "Users", roles: ["ADMIN"] },
+    { to: "/manager/users", label: "My Team", roles: ["MANAGER"] },
     { to: "/admin/departments", label: "Departments", roles: ["ADMIN"] },
-    { to: "/audit-logs", label: "Audit Logs", roles: ["ADMIN"] },
-    { to: "/notifications", label: "Notifications", roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
     { to: "/admin/categories", label: "Categories", roles: ["ADMIN"] },
+    { to: "/admin/audit-logs", label: "Audit Logs", roles: ["ADMIN"] },
+    { to: "/admin/reports", label: "Reports", roles: ["ADMIN"] },
+    { to: "/compliance/breaches", label: "SLA Breaches", roles: ["ADMIN", "MANAGER"] },
+    { to: "/manager/charts", label: "Analytics", roles: ["MANAGER"] },
   ].filter((l) => role && l.roles.includes(role));
 
   return (

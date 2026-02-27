@@ -21,15 +21,13 @@ public class AdminService {
     @Autowired
     DepartmentRepository departmentRepo;
 
-    public ResponseEntity<String> deactivateUser(Long id) {
+    public ResponseEntity<String> toggleUserStatus(Long id) {
         User user = userRepo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        if (user.getStatus() == UserStatus.INACTIVE) {
-            return ResponseEntity.ok("User is already InActive");
-        }
-        user.setStatus(UserStatus.INACTIVE);
+        UserStatus newStatus = user.getStatus() == UserStatus.ACTIVE ? UserStatus.INACTIVE : UserStatus.ACTIVE;
+        user.setStatus(newStatus);
         userRepo.save(user);
-        return ResponseEntity.ok("User deactivated successfully");
+        return ResponseEntity.ok("User status toggled to " + newStatus);
     }
 
     public ResponseEntity<String> updateUserDetails(Long id, UpdateUserDetails updateObj) {

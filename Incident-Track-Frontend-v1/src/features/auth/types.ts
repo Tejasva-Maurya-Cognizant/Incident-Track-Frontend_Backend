@@ -1,7 +1,6 @@
 export type UserRole = "EMPLOYEE" | "MANAGER" | "ADMIN";
 
-// (If you have exact enum values, replace these.)
-export type UserStatus = "ACTIVE" | "INACTIVE" | "DEACTIVATED" | string;
+export type UserStatus = "ACTIVE" | "INACTIVE";
 
 export interface AuthRequest {
   email: string;

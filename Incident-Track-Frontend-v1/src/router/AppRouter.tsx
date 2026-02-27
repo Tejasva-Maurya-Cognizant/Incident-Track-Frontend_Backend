@@ -22,10 +22,18 @@ import IncidentDetailPage from "../pages/incidents/IncidentDetailPage";
 
 import AdminDepartmentsPage from "../pages/admin/AdminDepartmentsPage";
 import AdminCategoriesPage from "../pages/admin/AdminCategoriesPage";
+import AdminUsersPage from "../pages/admin/AdminUsersPage";
+import ManagerUsersPage from "../pages/manager/ManagerUsersPage";
 
 import TasksListPage from "../pages/tasks/TasksListPage";
 import TaskDetailPage from "../pages/tasks/TaskDetailPage";
 import TaskCreatePage from "../pages/tasks/TaskCreatePage";
+
+import AdminAuditLogPage from "../pages/admin/AdminAuditLogPage";
+import IncidentBreachesPage from "../pages/compliance/IncidentBreachesPage";
+
+import AdminReportsPage from "../pages/admin/AdminReportsPage";
+import ManagerChartsPage from "../pages/manager/ManagerChartsPage";
 
 const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
@@ -66,6 +74,24 @@ const router = createBrowserRouter([
             children: [
               { path: "/admin/departments", element: <AdminDepartmentsPage /> },
               { path: "/admin/categories", element: <AdminCategoriesPage /> },
+              { path: "/admin/users", element: <AdminUsersPage /> },
+              { path: "/admin/audit-logs", element: <AdminAuditLogPage /> },
+              { path: "/admin/reports", element: <AdminReportsPage /> },
+            ],
+          },
+
+          {
+            element: <RoleGuard allow={["ADMIN", "MANAGER"]} />,
+            children: [
+              { path: "/compliance/breaches", element: <IncidentBreachesPage /> },
+            ],
+          },
+
+          {
+            element: <RoleGuard allow={["MANAGER"]} />,
+            children: [
+              { path: "/manager/users", element: <ManagerUsersPage /> },
+              { path: "/manager/charts", element: <ManagerChartsPage /> },
             ],
           },
 

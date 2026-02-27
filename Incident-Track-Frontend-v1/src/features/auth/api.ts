@@ -1,4 +1,5 @@
-import { api } from "../../lib/axios/axiosInstance";
+﻿import { api } from "../../lib/axios/axiosInstance";
+import type { PagedResponse, PageParams } from "../../types/pagination";
 import type {
   AuthRequest,
   AuthResponse,
@@ -31,6 +32,13 @@ export const authApi = {
     return res.data;
   },
 
+  getAllUsersPaged: async (p: PageParams) => {
+    const res = await api.get<PagedResponse<UserResponseDto>>(`${AUTH_BASE}/getAllUsers/paged`, {
+      params: { page: p.page, size: p.size, sortBy: p.sortBy, sortDir: p.sortDir },
+    });
+    return res.data;
+  },
+
   getUserById: async (id: number) => {
     const res = await api.get<UserResponseDto>(`${AUTH_BASE}/getUserById/${id}`);
     return res.data;
@@ -41,18 +49,25 @@ export const authApi = {
     return res.data;
   },
 
+  getEmployeesByDepartmentPaged: async (p: PageParams) => {
+    const res = await api.get<PagedResponse<UserResponseDto>>(`${AUTH_BASE}/getEmployeesByDepartment/paged`, {
+      params: { page: p.page, size: p.size, sortBy: p.sortBy, sortDir: p.sortDir },
+    });
+    return res.data;
+  },
+
   updateUser: async (body: UpdateUserSelf) => {
     const res = await api.put<string>(`${AUTH_BASE}/updateUser`, body);
     return res.data;
   },
 
-  updateUserDetailsByAdmin: async (id: number, body: UpdateUserDetails) => {
-    const res = await api.put<UserResponseDto>(`${AUTH_BASE}/updateUserDetails/${id}`, body);
+  updateUserDetailsByAdmin: async (id: number, body: Partial<UpdateUserDetails>) => {
+    const res = await api.put<string>(`${AUTH_BASE}/updateUserDetails/${id}`, body);
     return res.data;
   },
 
-  deactivateUser: async (id: number) => {
-    const res = await api.patch<void>(`${AUTH_BASE}/deactivateUser/${id}`);
+  toggleUserStatus: async (id: number) => {
+    const res = await api.patch<void>(`${AUTH_BASE}/toggleUserStatus/${id}`);
     return res.data;
   },
 };

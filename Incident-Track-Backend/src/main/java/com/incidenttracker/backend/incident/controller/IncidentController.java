@@ -63,7 +63,7 @@ public class IncidentController {
         @GetMapping("/paged")
         public ResponseEntity<PagedResponse<IncidentResponseDTO>> getIncidentsByUserPaged(
                         @RequestParam(defaultValue = "0") int page,
-                        @RequestParam(defaultValue = "10") int size,
+                        @RequestParam(defaultValue = "20") int size,
                         @RequestParam(defaultValue = "reportedDate") String sortBy,
                         @RequestParam(defaultValue = "desc") String sortDir) {
                 Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
@@ -119,7 +119,7 @@ public class IncidentController {
         public ResponseEntity<PagedResponse<IncidentResponseDTO>> getIncidentsBySeverityPaged(
                         @PathVariable IncidentSeverity calculatedSeverity,
                         @RequestParam(defaultValue = "0") int page,
-                        @RequestParam(defaultValue = "10") int size,
+                        @RequestParam(defaultValue = "20") int size,
                         @RequestParam(defaultValue = "reportedDate") String sortBy,
                         @RequestParam(defaultValue = "desc") String sortDir) {
                 Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
@@ -146,7 +146,7 @@ public class IncidentController {
         @GetMapping("/CRITICAL/paged")
         public ResponseEntity<PagedResponse<IncidentResponseDTO>> getIncidentsByCriticalPaged(
                         @RequestParam(defaultValue = "0") int page,
-                        @RequestParam(defaultValue = "10") int size,
+                        @RequestParam(defaultValue = "20") int size,
                         @RequestParam(defaultValue = "reportedDate") String sortBy,
                         @RequestParam(defaultValue = "desc") String sortDir) {
                 Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
@@ -191,7 +191,7 @@ public class IncidentController {
         @GetMapping("/admin-manager/all/paged")
         public ResponseEntity<PagedResponse<IncidentResponseDTO>> getAllIncidentsForAdminPaged(
                         @RequestParam(defaultValue = "0") int page,
-                        @RequestParam(defaultValue = "10") int size,
+                        @RequestParam(defaultValue = "20") int size,
                         @RequestParam(defaultValue = "reportedDate") String sortBy,
                         @RequestParam(defaultValue = "desc") String sortDir) {
                 Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
