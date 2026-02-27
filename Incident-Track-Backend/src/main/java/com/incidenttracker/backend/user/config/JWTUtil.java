@@ -5,6 +5,7 @@ import java.util.Date;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import javax.crypto.SecretKey;
@@ -18,35 +19,65 @@ public class JWTUtil {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    /** Original method kept for backward compatibility */
     public String generateToken(String username) {
-        return Jwts.builder() // Starts building the JWT token.
-                // Sets the subject of the token to the provided username.
+        return Jwts.builder()
                 .subject(username)
-
-                // Sets the token's issue time to the current date and time.
                 .issuedAt(new Date())
-
-                // 10 hours, Sets the token's expiration time to 10 hours from now.
                 .expiration(new Date(System.currentTimeMillis() + 36000000))
-
-                // Signs the token using the secret key and HMAC SHA-256 algorithm.
                 .signWith(getSigningKey())
-
-                // Finalizes and returns the compact JWT string.
                 .compact();
+    }
+
+    /**
+     * New overload: embeds role + userId claims so the filter and services never
+     * need a DB call
+     */
+    public String generateToken(String username, String role, Long userId) {
+        return Jwts.builder()
+                .subject(username)
+                .claim("role", role)
+                .claim("userId", userId)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 36000000))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    private Claims extractAllClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     // Method to extract the username (subject) from a JWT token.
     public String extractUsername(String token) {
+        return extractAllClaims(token).getSubject();
+    }
 
-        // Begins building the JWT parser.
-        return Jwts.parser()
+    /**
+     * Returns the role claim embedded in the token, or null if absent (old tokens).
+     */
+    public String extractRole(String token) {
+        try {
+            return extractAllClaims(token).get("role", String.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
-                .verifyWith(getSigningKey()) // .setSigningKey() is now .verifyWith()
-                .build()
-                .parseSignedClaims(token) // .parseClaimsJws() is now .parseSignedClaims()
-                .getPayload() // .getBody() is now .getPayload()
-                .getSubject();
+    /**
+     * Returns the userId claim embedded in the token, or null if absent (old
+     * tokens).
+     */
+    public Long extractUserId(String token) {
+        try {
+            return extractAllClaims(token).get("userId", Long.class);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // Method to validate the token by comparing its username with the expected
@@ -55,6 +86,17 @@ public class JWTUtil {
         try {
             final String username = extractUsername(token);
             return (username.equals(userDetails.getUsername()));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Validate token using only JWT claims — no UserDetails / no DB call needed.
+     */
+    public boolean validateToken(String token, String username) {
+        try {
+            return extractUsername(token).equals(username);
         } catch (Exception e) {
             return false;
         }

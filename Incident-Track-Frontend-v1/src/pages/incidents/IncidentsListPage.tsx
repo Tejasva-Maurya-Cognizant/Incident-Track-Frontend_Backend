@@ -39,12 +39,20 @@ export default function IncidentsListPage() {
       let res;
       if (onlyCritical) {
         res = await incidentsApi.listCriticalPaged(p);
-      } else if (status) {
-        res = await incidentsApi.listByStatusPaged(status, p);
       } else if (canSeeAll && scope === "ALL") {
-        res = await incidentsApi.listAllAdminManagerPaged(p);
+        // Admin/Manager viewing all incidents — apply status filter on admin endpoint
+        if (status) {
+          res = await incidentsApi.listAllAdminManagerByStatusPaged(status, p);
+        } else {
+          res = await incidentsApi.listAllAdminManagerPaged(p);
+        }
       } else {
-        res = await incidentsApi.listMinePaged(p);
+        // My incidents — apply status filter on user endpoint
+        if (status) {
+          res = await incidentsApi.listByStatusPaged(status, p);
+        } else {
+          res = await incidentsApi.listMinePaged(p);
+        }
       }
       setItems(res.content);
       setPaging({ totalElements: res.totalElements, totalPages: res.totalPages, page: res.page });

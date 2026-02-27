@@ -233,6 +233,12 @@ public class IncidentServiceImpl implements IncidentService {
 		return toPagedResponse(page);
 	}
 
+	@Override
+	public PagedResponse<IncidentResponseDTO> getAllIncidentsByStatusPaged(IncidentStatus status, Pageable pageable) {
+		Page<Incident> page = incidentRepository.findByStatus(status, pageable);
+		return toPagedResponse(page);
+	}
+
 	private PagedResponse<IncidentResponseDTO> toPagedResponse(Page<Incident> page) {
 		return PagedResponse.<IncidentResponseDTO>builder()
 				.content(page.getContent().stream().map(this::mapToResponseDTO).toList())

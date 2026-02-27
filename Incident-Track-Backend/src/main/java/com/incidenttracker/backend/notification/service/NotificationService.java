@@ -2,7 +2,7 @@ package com.incidenttracker.backend.notification.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -55,12 +55,26 @@ public class NotificationService {
 	 */
 	public SseEmitter subscribe() {
 
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
-		Long userId = currentUser.getUserId();
-		// SseEmitter(timeout): 30 mins (30 * 60 * 1000L).
-		// If no data is sent for 30 mins, the connection closes to save server memory.
-		SseEmitter emitter = new SseEmitter(1800000L);
+		// Fast path: read userId from JWT claim — no DB call
+		Long tokenUserId = securityService.getCurrentUserIdFromToken();
+		final Long userId = (tokenUserId != null) ? tokenUserId
+				: securityService.getCurrentUser()
+						.orElseThrow(() -> new RuntimeException("Authentication required"))
+						.getUserId();
+
+		// Limit to 1 active SSE connection per user to prevent connection storms
+		List<SseEmitter> existingEmitters = emitters.get(userId);
+		if (existingEmitters != null && existingEmitters.size() >= 3) {
+			log.warn("User {} already has {} SSE connections. Closing oldest to prevent pool exhaustion.",
+					userId, existingEmitters.size());
+			SseEmitter oldest = existingEmitters.get(0);
+			oldest.complete();
+			existingEmitters.remove(oldest);
+		}
+
+		// SseEmitter(timeout): 5 mins. Short enough to free threads, frontend
+		// reconnects.
+		SseEmitter emitter = new SseEmitter(300000L);
 
 		// Registers the new emitter into our storage
 		emitters.computeIfAbsent(userId, k -> new CopyOnWriteArrayList<>()).add(emitter);
@@ -103,22 +117,34 @@ public class NotificationService {
 	 */
 	private void sendLiveNotification(Long userId, NotificationResponseDto payload) {
 		List<SseEmitter> userEmitters = emitters.get(userId);
-		if (userEmitters != null) {
-			log.debug("Attempting to send live notification to {} active tabs for user ID: {}",
-					userEmitters.size(), userId);
-			for (SseEmitter emitter : userEmitters) {
-				try {
-					// .name("notification"): The event name the frontend listens for.
-					// .data(payload): The actual JSON data being sent.
-					emitter.send(SseEmitter.event().name("notification").data(payload));
-				} catch (IOException e) {
-					log.warn("Failed to send SSE to user ID: {}. Removing dead emitter.", userId);
-					// If sending fails (Browser closed), remove that dead emitter
-					removeEmitter(userId, emitter);
-				}
-			}
-		} else {
+		if (userEmitters == null || userEmitters.isEmpty()) {
 			log.debug("No active SSE connections for user ID: {}. Live push skipped.", userId);
+			return;
+		}
+
+		log.debug("Attempting to send live notification to {} active tabs for user ID: {}",
+				userEmitters.size(), userId);
+
+		// Collect dead emitters separately — never modify a list while iterating it
+		List<SseEmitter> deadEmitters = new ArrayList<>();
+
+		for (SseEmitter emitter : userEmitters) {
+			try {
+				emitter.send(SseEmitter.event().name("notification").data(payload));
+			} catch (Exception e) {
+				// Catches IOException, IllegalStateException ("ResponseBodyEmitter is already
+				// set complete")
+				// and the Spring-internal "Failed to send" wrapper — all indicate a dead
+				// connection
+				log.warn("Failed to send SSE to user ID: {} — marking emitter as dead. Reason: {}", userId,
+						e.getMessage());
+				deadEmitters.add(emitter);
+			}
+		}
+
+		// Remove all dead emitters after iteration
+		for (SseEmitter dead : deadEmitters) {
+			removeEmitter(userId, dead);
 		}
 	}
 
@@ -164,9 +190,11 @@ public class NotificationService {
 
 	// To get all the notifications
 	public List<NotificationResponseDto> getAllNotifications() {
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
-		Long userId = currentUser.getUserId();
+		Long userId = securityService.getCurrentUserIdFromToken();
+		if (userId == null) {
+			userId = securityService.getCurrentUser()
+					.orElseThrow(() -> new RuntimeException("Authentication required")).getUserId();
+		}
 		List<NotificationResponseDto> notifications = notificationRepository
 				.findByUser_UserIdOrderByCreatedDateTimeDesc(userId)
 				.stream().map(this::mapToResponse).toList();
@@ -176,9 +204,11 @@ public class NotificationService {
 
 	// Paginated: get all notifications for current user
 	public PagedResponse<NotificationResponseDto> getAllNotificationsPaged(Pageable pageable) {
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
-		Long userId = currentUser.getUserId();
+		Long userId = securityService.getCurrentUserIdFromToken();
+		if (userId == null) {
+			userId = securityService.getCurrentUser()
+					.orElseThrow(() -> new RuntimeException("Authentication required")).getUserId();
+		}
 		Page<Notification> page = notificationRepository.findByUser_UserId(userId, pageable);
 		log.info("Retrieved paged notifications for user ID: {}", userId);
 		return toPagedResponse(page);
@@ -186,9 +216,11 @@ public class NotificationService {
 
 	// To view all the unread notifications only
 	public List<NotificationResponseDto> getUnreads() {
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
-		Long userId = currentUser.getUserId();
+		Long userId = securityService.getCurrentUserIdFromToken();
+		if (userId == null) {
+			userId = securityService.getCurrentUser()
+					.orElseThrow(() -> new RuntimeException("Authentication required")).getUserId();
+		}
 		List<NotificationResponseDto> unreads = notificationRepository.findUnreadNotifications(userId)
 				.stream().map(this::mapToResponse).toList();
 		log.info("Retrieved {} unread notifications for user ID: {}", unreads.size(), userId);
@@ -197,9 +229,11 @@ public class NotificationService {
 
 	// Paginated: get unread notifications for current user
 	public PagedResponse<NotificationResponseDto> getUnreadsPaged(Pageable pageable) {
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
-		Long userId = currentUser.getUserId();
+		Long userId = securityService.getCurrentUserIdFromToken();
+		if (userId == null) {
+			userId = securityService.getCurrentUser()
+					.orElseThrow(() -> new RuntimeException("Authentication required")).getUserId();
+		}
 		Page<Notification> page = notificationRepository.findUnreadNotificationsPaged(userId, pageable);
 		log.info("Retrieved paged unread notifications for user ID: {}", userId);
 		return toPagedResponse(page);
@@ -230,9 +264,11 @@ public class NotificationService {
 	// To mark all notifications as read
 	@Transactional
 	public void markAllAsRead() {
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
-		Long userId = currentUser.getUserId();
+		Long userId = securityService.getCurrentUserIdFromToken();
+		if (userId == null) {
+			userId = securityService.getCurrentUser()
+					.orElseThrow(() -> new RuntimeException("Authentication required")).getUserId();
+		}
 		notificationRepository.markAllAsReadForUser(userId);
 		log.info("All notifications for user ID: {} marked as READ", userId);
 	}

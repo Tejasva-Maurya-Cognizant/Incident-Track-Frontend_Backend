@@ -200,6 +200,23 @@ public class IncidentController {
                 return ResponseEntity.ok(incidentService.getAllIncidentsPaged(pageable));
         }
 
+        /**
+         * GET /api/incidents/admin-manager/status/{status}/paged
+         */
+        @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+        @GetMapping("/admin-manager/status/{status}/paged")
+        public ResponseEntity<PagedResponse<IncidentResponseDTO>> getAllIncidentsByStatusForAdminPaged(
+                        @PathVariable IncidentStatus status,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size,
+                        @RequestParam(defaultValue = "reportedDate") String sortBy,
+                        @RequestParam(defaultValue = "desc") String sortDir) {
+                Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
+                                : Sort.by(sortBy).descending();
+                Pageable pageable = PageRequest.of(page, size, sort);
+                return ResponseEntity.ok(incidentService.getAllIncidentsByStatusPaged(status, pageable));
+        }
+
         @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
         @GetMapping("/admin-manager/{incidentId}")
         public ResponseEntity<IncidentResponseDTO> getIncidentDetailsForAdmin(@PathVariable Long incidentId) {

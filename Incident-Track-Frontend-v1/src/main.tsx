@@ -4,8 +4,9 @@ import "./index.css";
 import App from "./App.tsx";
 import { attachInterceptors } from "./lib/axios/interceptors.ts";
 import { AuthProvider } from "./context/AuthContext.tsx";
+import { NotificationProvider } from "./context/NotificationContext.tsx";
 
-attachInterceptors (() => {
+attachInterceptors(() => {
   // on 401
   localStorage.removeItem("it_token");
   window.location.href = "/login";
@@ -14,7 +15,9 @@ attachInterceptors (() => {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AuthProvider>
-      <App />
+      <NotificationProvider>
+        <App />
+      </NotificationProvider>
     </AuthProvider>
   </StrictMode>,
 );

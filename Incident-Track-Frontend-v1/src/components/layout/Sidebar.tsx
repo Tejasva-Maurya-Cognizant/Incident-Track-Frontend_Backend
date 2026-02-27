@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useNotifications } from "../../context/NotificationContext";
 import ProfilePanel from "../common/ProfilePanel";
 
 const linkBase =
@@ -28,6 +29,7 @@ function UserAvatar({ name }: { name: string }) {
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
   const role = user?.role;
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -35,6 +37,7 @@ export default function Sidebar() {
     { to: "/", label: "Home", section: "general", roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
     { to: "/incidents", label: "Incidents", section: "general", roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
     { to: "/tasks", label: "Tasks", section: "general", roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
+    { to: "/notifications", label: "Notifications", section: "general", roles: ["ADMIN", "MANAGER", "EMPLOYEE"], badge: true as const },
     { to: "/admin/users", label: "Users", section: "management", roles: ["ADMIN"] },
     { to: "/manager/users", label: "My Team", section: "management", roles: ["MANAGER"] },
     { to: "/admin/departments", label: "Departments", section: "management", roles: ["ADMIN"] },
@@ -88,7 +91,12 @@ export default function Sidebar() {
                     }
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
-                    {l.label}
+                    <span className="flex-1">{l.label}</span>
+                    {l.badge && unreadCount > 0 && (
+                      <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-[#175FFA] text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    )}
                   </NavLink>
                 ))}
               </div>

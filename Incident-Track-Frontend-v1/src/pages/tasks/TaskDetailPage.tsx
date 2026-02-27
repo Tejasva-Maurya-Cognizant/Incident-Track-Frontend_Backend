@@ -149,10 +149,20 @@ export default function TaskDetailPage() {
                 <span className="text-slate-900 font-medium">Task #{data.taskId}</span>
             </div>
 
-            {/* Page heading */}
-            <div>
-                <h2 className="text-base font-semibold text-slate-900 leading-tight">{data.title}</h2>
-                <p className="text-[11px] text-slate-400 mt-0.5">Task #{data.taskId}</p>
+            {/* Page heading + back */}
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <h2 className="text-base font-semibold text-slate-900 leading-tight">{data.title}</h2>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Task #{data.taskId}</p>
+                </div>
+                <button
+                    onClick={() => navigate(-1)}
+                    className="inline-flex items-center gap-1 h-8 px-3.5 rounded-[8px] border text-xs font-medium text-slate-700 hover:bg-[#FAFCFF] transition-colors shrink-0"
+                    style={{ borderColor: "var(--border)" }}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                    Back
+                </button>
             </div>
 
             {/* Detail card */}
@@ -193,8 +203,8 @@ export default function TaskDetailPage() {
                                     key={s}
                                     onClick={() => { setNewStatus(s); setUpdateOk(false); setUpdateErr(null); }}
                                     className={`h-7 px-3 rounded-[8px] text-xs font-medium border transition-colors ${newStatus === s
-                                            ? "bg-[#175FFA] text-white border-[#175FFA]"
-                                            : "border-[var(--border)] text-slate-600 hover:bg-[#FAFCFF]"
+                                        ? "bg-[#175FFA] text-white border-[#175FFA]"
+                                        : "border-[var(--border)] text-slate-600 hover:bg-[#FAFCFF]"
                                         }`}
                                 >
                                     {s === "IN_PROGRESS" ? "In Progress" : s.charAt(0) + s.slice(1).toLowerCase()}

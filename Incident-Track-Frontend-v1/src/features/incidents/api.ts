@@ -45,6 +45,14 @@ export const incidentsApi = {
     return res.data;
   },
 
+  // Admin/Manager: all incidents filtered by status paged
+  listAllAdminManagerByStatusPaged: async (status: IncidentStatus, p: PageParams) => {
+    const res = await api.get<PagedResponse<IncidentResponseDTO>>(`${BASE}/admin-manager/status/${status}/paged`, {
+      params: { page: p.page, size: p.size, sortBy: p.sortBy, sortDir: p.sortDir },
+    });
+    return res.data;
+  },
+
   // Filters — non-paged
   listByStatus: async (status: IncidentStatus) => {
     const res = await api.get<IncidentResponseDTO[]>(`${BASE}/status/${status}`);

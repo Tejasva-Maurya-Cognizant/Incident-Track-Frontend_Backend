@@ -70,7 +70,7 @@ public class AuthController {
             return ResponseEntity.status(403).body(new AuthResponse(null, "Account is deactivated", null, null, null));
         }
 
-        String token = jwtUtils.generateToken(user.getEmail());
+        String token = jwtUtils.generateToken(user.getEmail(), user.getRole().name(), user.getUserId());
         String email = user.getEmail();
         String username = user.getUsername();
         Long userId = user.getUserId();

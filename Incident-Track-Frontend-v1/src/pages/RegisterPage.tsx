@@ -6,7 +6,6 @@ import { useEffect } from "react";
 import { departmentsApi } from "../features/departments/api";
 import type { DepartmentResponseDto } from "../features/departments/types";
 import { getDepartmentId } from "../features/departments/types";
-import Select from "../components/common/Select";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
@@ -67,105 +66,125 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg)] px-4">
-      <div className="card w-full max-w-[520px] p-6">
-        <h1 className="text-xl font-semibold text-slate-900">Create account</h1>
-        <p className="text-sm text-slate-600 mt-1">
-          Register to start using IncidentTrack
-        </p>
+    <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ background: "var(--bg)" }}>
+      <div className="card w-full max-w-[420px] p-6">
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          <div>
-            <label className="text-sm text-slate-700">Username</label>
-            <input
-              className="input mt-1"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="e.g. it_admin"
-            />
+        {/* Brand mark */}
+        <div className="flex items-center gap-2 mb-5">
+          <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: "var(--brand)" }}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+          </div>
+          <span className="text-sm font-semibold text-slate-900 tracking-tight">IncidentTrack</span>
+        </div>
+
+        <h2 className="text-sm font-semibold text-slate-900">Create your account</h2>
+        <p className="text-xs text-slate-400 mt-0.5 mb-5">Fill in the details below to get started</p>
+
+        <form onSubmit={onSubmit} className="space-y-3">
+          {/* Username + Email */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Username</label>
+              <input
+                className="input h-8 text-xs"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="e.g. john_doe"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
+              <input
+                className="input h-8 text-xs"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+              />
+            </div>
           </div>
 
+          {/* Password */}
           <div>
-            <label className="text-sm text-slate-700">Email</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Password</label>
             <input
-              className="input mt-1"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="e.g. it_admin@company.com"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm text-slate-700">Password</label>
-            <input
-              className="input mt-1"
+              className="input h-8 text-xs"
               type="password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Department + Role */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              {/* <label className="text-sm text-slate-700">Department ID</label> */}
-              <Select
-                label="Department"
+              <label className="block text-xs font-medium text-slate-600 mb-1">Department</label>
+              <select
+                className="input h-8 text-xs bg-white"
                 value={departmentId}
                 disabled={deptLoading || departments.length === 0}
-                onChange={(v) => setDepartmentId(Number(v))}
-                placeholder={deptLoading ? "Loading..." : "Select department"}
-                options={departments.map((d) => ({
-                  value: getDepartmentId(d),
-                  label: d.departmentName,
-                }))}
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                {/* Departments loaded from <code>/api/departments</code> */}
-              </p>
+                onChange={(e) => setDepartmentId(Number(e.target.value))}
+              >
+                {deptLoading
+                  ? <option>Loading…</option>
+                  : departments.map((d) => (
+                    <option key={getDepartmentId(d)} value={getDepartmentId(d)}>{d.departmentName}</option>
+                  ))
+                }
+              </select>
             </div>
-
             <div>
-              <label className="text-sm text-slate-700">Role</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Role</label>
               <select
-                className="input mt-1"
+                className="input h-8 text-xs bg-white"
                 value={role}
                 onChange={(e) => setRole(e.target.value as UserRole)}
               >
-                <option value="EMPLOYEE">EMPLOYEE</option>
-                <option value="MANAGER">MANAGER</option>
-                <option value="ADMIN">ADMIN</option>
+                <option value="EMPLOYEE">Employee</option>
+                <option value="MANAGER">Manager</option>
+                <option value="ADMIN">Admin</option>
               </select>
             </div>
           </div>
 
+          {/* Status */}
           <div>
-            <label className="text-sm text-slate-700">Status</label>
-            <input
-              className="input mt-1"
-              value={String(status)}
+            <label className="block text-xs font-medium text-slate-600 mb-1">Status</label>
+            <select
+              className="input h-8 text-xs bg-white"
+              value={status}
               onChange={(e) => setStatus(e.target.value as UserStatus)}
-              placeholder="e.g. ACTIVE"
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              Set to your backend enum value (e.g. ACTIVE).
-            </p>
+            >
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+            </select>
           </div>
 
-          {err && <div className="text-sm text-red-600">{err}</div>}
-          {ok && <div className="text-sm text-emerald-700">{ok}</div>}
+          {err && (
+            <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-[8px] px-3 py-1.5">
+              {err}
+            </div>
+          )}
+          {ok && (
+            <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-[8px] px-3 py-1.5">
+              {ok}
+            </div>
+          )}
 
-          <button className="btn-primary w-full" disabled={loading}>
-            {loading ? "Creating..." : "Create account"}
+          <button className="btn-primary w-full h-8 text-xs mt-1" disabled={loading}>
+            {loading ? "Creating account…" : "Create account"}
           </button>
-
-          <div className="text-sm text-slate-600 text-center">
-            Already have an account?{" "}
-            <a className="text-[#175FFA] hover:underline" href="/login">
-              Sign in
-            </a>
-          </div>
         </form>
+
+        <p className="text-xs text-slate-400 text-center mt-4">
+          Already have an account?{" "}
+          <a className="text-[#175FFA] hover:underline font-medium" href="/login">Sign in</a>
+        </p>
       </div>
     </div>
   );

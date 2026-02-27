@@ -44,4 +44,6 @@ public interface IncidentService {
 			Pageable pageable);
 
 	PagedResponse<IncidentResponseDTO> getAllIncidentsPaged(Pageable pageable);
+
+	PagedResponse<IncidentResponseDTO> getAllIncidentsByStatusPaged(IncidentStatus status, Pageable pageable);
 }

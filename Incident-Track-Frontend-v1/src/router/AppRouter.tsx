@@ -29,6 +29,8 @@ import TasksListPage from "../pages/tasks/TasksListPage";
 import TaskDetailPage from "../pages/tasks/TaskDetailPage";
 import TaskCreatePage from "../pages/tasks/TaskCreatePage";
 
+import NotificationsPage from "../pages/notifications/NotificationsPage";
+
 import AdminAuditLogPage from "../pages/admin/AdminAuditLogPage";
 import IncidentBreachesPage from "../pages/compliance/IncidentBreachesPage";
 
@@ -109,6 +111,8 @@ const router = createBrowserRouter([
             ],
           },
           { path: "/tasks/:id", element: <TaskDetailPage /> },
+
+          { path: "/notifications", element: <NotificationsPage /> },
         ],
       },
     ],

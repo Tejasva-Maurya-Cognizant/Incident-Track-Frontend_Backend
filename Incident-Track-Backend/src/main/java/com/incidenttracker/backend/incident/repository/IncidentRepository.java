@@ -14,45 +14,47 @@ import com.incidenttracker.backend.common.enums.IncidentStatus;
 import com.incidenttracker.backend.incident.entity.Incident;
 
 public interface IncidentRepository extends JpaRepository<Incident, Long> {
-    List<Incident> findByReportedBy_UserId(Long UserId);
+        List<Incident> findByReportedBy_UserId(Long UserId);
 
-    List<Incident> findByReportedBy_UserIdAndStatus(Long UserId, IncidentStatus status);
+        List<Incident> findByReportedBy_UserIdAndStatus(Long UserId, IncidentStatus status);
 
-    List<Incident> findByReportedBy_UserIdAndCalculatedSeverity(Long UserId, IncidentSeverity severity);
+        List<Incident> findByReportedBy_UserIdAndCalculatedSeverity(Long UserId, IncidentSeverity severity);
 
-    List<Incident> findByReportedBy_UserIdAndIsCritical(Long UserId, Boolean isCritical);
+        List<Incident> findByReportedBy_UserIdAndIsCritical(Long UserId, Boolean isCritical);
 
-    Optional<Incident> findByIncidentIdAndReportedBy_UserId(Long incidentId, Long UserId);
+        Optional<Incident> findByIncidentIdAndReportedBy_UserId(Long incidentId, Long UserId);
 
-    // -------------- Pageable versions ---------------------------------------
-    Page<Incident> findByReportedBy_UserId(Long userId, Pageable pageable);
+        // -------------- Pageable versions ---------------------------------------
+        Page<Incident> findByReportedBy_UserId(Long userId, Pageable pageable);
 
-    Page<Incident> findByReportedBy_UserIdAndStatus(Long userId, IncidentStatus status, Pageable pageable);
+        Page<Incident> findByReportedBy_UserIdAndStatus(Long userId, IncidentStatus status, Pageable pageable);
 
-    Page<Incident> findByReportedBy_UserIdAndCalculatedSeverity(Long userId, IncidentSeverity severity,
-            Pageable pageable);
+        Page<Incident> findByReportedBy_UserIdAndCalculatedSeverity(Long userId, IncidentSeverity severity,
+                        Pageable pageable);
 
-    Page<Incident> findByReportedBy_UserIdAndIsCritical(Long userId, Boolean isCritical, Pageable pageable);
+        Page<Incident> findByReportedBy_UserIdAndIsCritical(Long userId, Boolean isCritical, Pageable pageable);
 
-    Page<Incident> findAll(Pageable pageable);
+        Page<Incident> findAll(Pageable pageable);
 
-    // -------------- for audit and compliance -------------------------------------
+        Page<Incident> findByStatus(IncidentStatus status, Pageable pageable);
 
-    // Incidents that are not resolved/closed and SLA due time has passed
-    @Query("""
-                select i from Incident i
-                where i.status <> com.incidenttracker.backend.common.enums.IncidentStatus.RESOLVED
-                  and i.status <> com.incidenttracker.backend.common.enums.IncidentStatus.CANCELLED
-                  and i.slaDueAt is not null
-                  and i.slaBreached = false
-                  and i.slaDueAt < :now
-            """)
-    List<Incident> findSlaOverdueNotMarked(LocalDateTime now);
+        // -------------- for audit and compliance -------------------------------------
 
-    // ----------------- for report -------------
-    List<Incident> findByReportedDateBetween(LocalDateTime start, LocalDateTime end);
+        // Incidents that are not resolved/closed and SLA due time has passed
+        @Query("""
+                            select i from Incident i
+                            where i.status <> com.incidenttracker.backend.common.enums.IncidentStatus.RESOLVED
+                              and i.status <> com.incidenttracker.backend.common.enums.IncidentStatus.CANCELLED
+                              and i.slaDueAt is not null
+                              and i.slaBreached = false
+                              and i.slaDueAt < :now
+                        """)
+        List<Incident> findSlaOverdueNotMarked(LocalDateTime now);
 
-    List<Incident> findByReportedDateBetweenAndCategory_Department_DepartmentId(
-            LocalDateTime start, LocalDateTime end, Long departmentId);
+        // ----------------- for report -------------
+        List<Incident> findByReportedDateBetween(LocalDateTime start, LocalDateTime end);
+
+        List<Incident> findByReportedDateBetweenAndCategory_Department_DepartmentId(
+                        LocalDateTime start, LocalDateTime end, Long departmentId);
 
 }

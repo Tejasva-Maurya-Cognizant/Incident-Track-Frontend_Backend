@@ -1,22 +1,37 @@
-import { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+﻿import { useEffect, useState } from "react";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { incidentsApi } from "../../features/incidents/api";
 import type { IncidentResponseDTO, IncidentStatus } from "../../features/incidents/types";
 import { useAuth } from "../../context/AuthContext";
 import StatusBadge from "../../components/common/StatusBadge";
 import PriorityBadge from "../../components/common/PriorityBadge";
 
+const ALL_STATUSES: IncidentStatus[] = ["OPEN", "IN_PROGRESS", "RESOLVED", "CANCELLED"];
+
+function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div
+      className="flex items-start justify-between py-2 border-b last:border-0"
+      style={{ borderColor: "var(--border)" }}
+    >
+      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide w-28 shrink-0">
+        {label}
+      </span>
+      <span className="text-xs text-slate-800 font-medium text-right">{children}</span>
+    </div>
+  );
+}
+
 export default function IncidentDetailPage() {
   const { id } = useParams();
-  const [searchParams] = useSearchParams();
-  const mode = searchParams.get("mode"); // "status" optional
+  const incidentId = Number(id);
+  const navigate = useNavigate();
 
   const { user } = useAuth();
   const role = user?.role ?? "EMPLOYEE";
   const canSeeAll = role === "ADMIN" || role === "MANAGER";
   const canUpdateStatus = role === "ADMIN" || role === "MANAGER";
-
-  const incidentId = Number(id);
+  const canWithdraw = role === "EMPLOYEE";
 
   const [data, setData] = useState<IncidentResponseDTO | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,6 +39,11 @@ export default function IncidentDetailPage() {
 
   const [newStatus, setNewStatus] = useState<IncidentStatus>("IN_PROGRESS");
   const [note, setNote] = useState("");
+  const [updating, setUpdating] = useState(false);
+  const [updateErr, setUpdateErr] = useState<string | null>(null);
+  const [updateOk, setUpdateOk] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [withdrawErr, setWithdrawErr] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -48,109 +68,166 @@ export default function IncidentDetailPage() {
   }, [incidentId]);
 
   const onWithdraw = async () => {
+    setWithdrawing(true);
+    setWithdrawErr(null);
     try {
       const res = await incidentsApi.withdraw(incidentId);
       setData(res);
     } catch (e: any) {
-      alert(e?.response?.data?.message ?? "Withdraw failed");
+      setWithdrawErr(e?.response?.data?.message ?? "Withdraw failed");
+    } finally {
+      setWithdrawing(false);
     }
   };
 
   const onUpdateStatus = async () => {
     if (!canUpdateStatus) return;
+    setUpdating(true);
+    setUpdateErr(null);
+    setUpdateOk(false);
     try {
       const res = await incidentsApi.updateStatusAdminManager(incidentId, { status: newStatus, note });
       setData(res);
       setNote("");
-      alert("Status updated");
+      setUpdateOk(true);
     } catch (e: any) {
-      alert(e?.response?.data?.message ?? "Status update failed");
+      setUpdateErr(e?.response?.data?.message ?? "Status update failed");
+    } finally {
+      setUpdating(false);
     }
   };
 
-  if (loading) return <div className="text-sm text-slate-600">Loading...</div>;
-  if (err) return <div className="text-sm text-red-600">{err}</div>;
+  const fmtDate = (iso: string | null | undefined) => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  if (loading)
+    return <div className="text-xs text-slate-500 py-8 text-center">Loading incident</div>;
+
+  if (err)
+    return (
+      <div className="card p-6 text-center">
+        <p className="text-xs text-red-600 mb-3">{err}</p>
+        <Link to="/incidents" className="text-xs text-[#175FFA] hover:underline">Back to Incidents</Link>
+      </div>
+    );
+
   if (!data) return null;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3 max-w-2xl">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1.5 text-xs text-slate-500">
+        <Link to="/incidents" className="hover:text-[#175FFA] transition-colors">Incidents</Link>
+        <span>/</span>
+        <span className="text-slate-900 font-medium">Incident #{data.incidentId}</span>
+      </div>
+
+      {/* Page heading + actions */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Incident #{data.incidentId}</h2>
-          <p className="text-sm text-slate-600 mt-1">{data.categoryName}</p>
+          <h2 className="text-base font-semibold text-slate-900 leading-tight">{data.categoryName}</h2>
+          <p className="text-[11px] text-slate-400 mt-0.5">
+            Incident #{data.incidentId}{data.subCategory ? `  ${data.subCategory}` : ""}
+          </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2 shrink-0">
+          {canWithdraw && data.status !== "CANCELLED" && data.status !== "RESOLVED" && (
+            <button
+              onClick={onWithdraw}
+              disabled={withdrawing}
+              className="h-8 px-3.5 rounded-[8px] border text-xs font-medium text-slate-700 hover:bg-[#FAFCFF] transition-colors"
+              style={{ borderColor: "var(--border)" }}
+            >
+              {withdrawing ? "Withdrawing" : "Withdraw"}
+            </button>
+          )}
           <button
-            onClick={onWithdraw}
-            className="h-[46px] px-4 rounded-[10px] bg-white border text-sm font-medium hover:bg-[#FAFCFF]"
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1 h-8 px-3.5 rounded-[8px] border text-xs font-medium text-slate-700 hover:bg-[#FAFCFF] transition-colors"
             style={{ borderColor: "var(--border)" }}
           >
-            Withdraw
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+            Back
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="card p-5 lg:col-span-2">
-          <div className="text-sm font-medium text-slate-900">Description</div>
-          <p className="text-sm text-slate-700 mt-2 whitespace-pre-wrap">{data.description}</p>
+      {/* Detail card */}
+      <div className="card p-4">
+        {/* Description */}
+        <div className="mb-3 pb-3 border-b" style={{ borderColor: "var(--border)" }}>
+          <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1">Description</div>
+          <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">{data.description}</p>
         </div>
 
-        <div className="card p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-slate-600">Status</div>
-            <StatusBadge status={data.status} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-slate-600">Severity</div>
-            <PriorityBadge severity={data.calculatedSeverity} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-slate-600">Critical</div>
-            <div className="text-sm font-medium text-slate-900">{data.isCritical ? "Yes" : "No"}</div>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-slate-600">Reported By</div>
-            <div className="text-sm font-medium text-slate-900">{data.username}</div>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-slate-600">Reported At</div>
-            <div className="text-sm font-medium text-slate-900">{new Date(data.reportedDate).toLocaleString()}</div>
-          </div>
-          {data.slaHours != null && (
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-slate-600">SLA Hours</div>
-              <div className="text-sm font-medium text-slate-900">{data.slaHours}</div>
-            </div>
-          )}
+        {/* 2-column info grid */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-0">
+          <InfoRow label="Status"><StatusBadge status={data.status} /></InfoRow>
+          <InfoRow label="Severity"><PriorityBadge severity={data.calculatedSeverity} /></InfoRow>
+          <InfoRow label="Category">{data.categoryName}</InfoRow>
+          <InfoRow label="Sub-Category">{data.subCategory ?? "—"}</InfoRow>
+          <InfoRow label="Department">{data.departmentName ?? "—"}</InfoRow>
+          <InfoRow label="SLA Hours">{data.slaHours != null ? `${data.slaHours}h` : "—"}</InfoRow>
+          <InfoRow label="Reported By">{data.username ?? "—"}</InfoRow>
+          <InfoRow label="Critical">{data.isCritical ? "Yes" : "No"}</InfoRow>
+          <InfoRow label="Reported At">{fmtDate(data.reportedDate)}</InfoRow>
+          {data.resolvedDate && <InfoRow label="Resolved At">{fmtDate(data.resolvedDate)}</InfoRow>}
         </div>
+
+        {/* Withdraw error */}
+        {withdrawErr && (
+          <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-[8px] px-3 py-1.5 mt-3">
+            {withdrawErr}
+          </div>
+        )}
+
+        {/* Inline status update for admin/manager */}
+        {canUpdateStatus && (
+          <div className="mt-3 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
+            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Update Status</div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {ALL_STATUSES.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => { setNewStatus(s); setUpdateOk(false); setUpdateErr(null); }}
+                  className={`h-7 px-3 rounded-[8px] text-xs font-medium border transition-colors ${newStatus === s
+                    ? "bg-[#175FFA] text-white border-[#175FFA]"
+                    : "border-[var(--border)] text-slate-600 hover:bg-[#FAFCFF]"
+                    }`}
+                >
+                  {s === "IN_PROGRESS" ? "In Progress" : s.charAt(0) + s.slice(1).toLowerCase()}
+                </button>
+              ))}
+              <button
+                className="btn-primary h-7 text-xs px-3 ml-auto"
+                onClick={onUpdateStatus}
+                disabled={updating || data.status === newStatus}
+              >
+                {updating ? "Updating" : "Apply"}
+              </button>
+            </div>
+            <input
+              className="input mt-2 h-8 text-xs"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Optional note (reason for status change)"
+            />
+            {updateErr && (
+              <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-[8px] px-3 py-1.5 mt-2">
+                {updateErr}
+              </div>
+            )}
+            {updateOk && (
+              <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-[8px] px-3 py-1.5 mt-2">
+                Status updated to {newStatus}.
+              </div>
+            )}
+          </div>
+        )}
       </div>
-
-      {canUpdateStatus && mode === "status" && (
-        <div className="card p-5 space-y-3">
-          <div className="text-sm font-medium text-slate-900">Update Status</div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="text-sm text-slate-700">New Status</label>
-              <select className="input mt-1 bg-white" value={newStatus} onChange={(e) => setNewStatus(e.target.value as any)}>
-                <option value="OPEN">OPEN</option>
-                <option value="IN_PROGRESS">IN_PROGRESS</option>
-                <option value="RESOLVED">RESOLVED</option>
-                <option value="CANCELLED">CANCELLED</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-sm text-slate-700">Note (optional)</label>
-              <input className="input mt-1" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Why status changed?" />
-            </div>
-          </div>
-
-          <button className="btn-primary" onClick={onUpdateStatus}>
-            Update Status
-          </button>
-        </div>
-      )}
     </div>
   );
 }

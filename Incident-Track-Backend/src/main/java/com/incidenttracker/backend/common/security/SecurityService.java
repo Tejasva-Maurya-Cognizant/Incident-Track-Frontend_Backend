@@ -1,10 +1,14 @@
 package com.incidenttracker.backend.common.security;
 
+import com.incidenttracker.backend.user.config.JWTUtil;
 import com.incidenttracker.backend.user.entity.User;
 import com.incidenttracker.backend.user.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Optional;
 
@@ -12,14 +16,41 @@ import java.util.Optional;
 public class SecurityService {
 
     private final UserRepository userRepository;
+    private final JWTUtil jwtUtil;
 
-    public SecurityService(UserRepository userRepository) {
+    public SecurityService(UserRepository userRepository, JWTUtil jwtUtil) {
         this.userRepository = userRepository;
+        this.jwtUtil = jwtUtil;
     }
 
     /**
-     * Get the currently authenticated User entity.
-     * Accessible from any module that injects this service.
+     * Fast path: read userId directly from the JWT claim — zero DB calls.
+     * Falls back to null if the token is old (no userId claim) or not present.
+     */
+    public Long getCurrentUserIdFromToken() {
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs == null)
+                return null;
+            HttpServletRequest request = attrs.getRequest();
+            String token = null;
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring(7);
+            } else {
+                String queryToken = request.getParameter("token");
+                if (queryToken != null && !queryToken.isBlank())
+                    token = queryToken;
+            }
+            return token != null ? jwtUtil.extractUserId(token) : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get the currently authenticated User entity (hits DB).
+     * Use getCurrentUserIdFromToken() when you only need the ID.
      */
     public Optional<User> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -29,14 +60,12 @@ public class SecurityService {
             return Optional.empty();
         }
 
-        // String username = authentication.getName();
         String email = authentication.getName();
         return userRepository.findByEmail(email);
-        // return userRepository.findByUsername(username);
     }
 
     /**
-     * Get only the username of the logged-in user.
+     * Get only the username (email) of the logged-in user — no DB call.
      */
     public String getCurrentUsername() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
