@@ -88,7 +88,7 @@ export default function IncidentCreatePage() {
   };
 
   return (
-    <div className="max-w-2xl space-y-3">
+    <div className="page-panel space-y-3">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-xs text-slate-500">
         <Link to="/incidents" className="hover:text-[#175FFA] transition-colors">Incidents</Link>

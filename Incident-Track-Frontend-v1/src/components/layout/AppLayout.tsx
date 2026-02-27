@@ -8,10 +8,10 @@ export default function AppLayout() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col" style={{ background: "var(--bg)" }}>
-      <div className="flex flex-1 overflow-hidden max-w-[1400px] w-full mx-auto px-2 py-2 gap-2">
+      <div className="flex flex-1 overflow-hidden w-full max-w-[var(--app-shell-max)] mx-auto px-2 py-2 gap-2 2xl:px-4 2xl:py-4 2xl:gap-4">
 
         {/* Desktop sidebar */}
-        <aside className="hidden lg:flex flex-col w-[220px] shrink-0">
+        <aside className="hidden lg:flex flex-col w-[220px] 2xl:w-[240px] shrink-0">
           <Sidebar />
         </aside>
 
@@ -45,7 +45,7 @@ export default function AppLayout() {
         {/* Right column */}
         <div className="flex flex-col flex-1 overflow-hidden gap-2 min-w-0">
           <Header onMenuClick={() => setSidebarOpen(true)} />
-          <main className="card flex-1 overflow-y-auto p-3 sm:p-4">
+          <main className="card flex-1 overflow-y-auto p-3 sm:p-4 2xl:p-5">
             <Outlet />
           </main>
         </div>

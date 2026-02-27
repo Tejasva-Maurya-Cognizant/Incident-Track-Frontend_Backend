@@ -67,37 +67,37 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ background: "var(--bg)" }}>
-      <div className="card w-full max-w-[420px] p-6">
+      <div className="card w-full max-w-[520px] p-7 sm:p-8">
 
         {/* Brand mark */}
-        <div className="flex items-center gap-2 mb-5">
-          <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: "var(--brand)" }}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+        <div className="flex items-center gap-2.5 mb-6">
+          <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: "var(--brand)" }}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
             </svg>
           </div>
-          <span className="text-sm font-semibold text-slate-900 tracking-tight">IncidentTrack</span>
+          <span className="text-base font-semibold text-slate-900 tracking-tight">IncidentTrack</span>
         </div>
 
-        <h2 className="text-sm font-semibold text-slate-900">Create your account</h2>
-        <p className="text-xs text-slate-400 mt-0.5 mb-5">Fill in the details below to get started</p>
+        <h2 className="text-lg font-semibold text-slate-900">Create your account</h2>
+        <p className="text-sm text-slate-400 mt-1 mb-6">Fill in the details below to get started</p>
 
-        <form onSubmit={onSubmit} className="space-y-3">
+        <form onSubmit={onSubmit} className="space-y-4">
           {/* Username + Email */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Username</label>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">Username</label>
               <input
-                className="input h-8 text-xs"
+                className="input h-10 text-sm"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="e.g. john_doe"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">Email</label>
               <input
-                className="input h-8 text-xs"
+                className="input h-10 text-sm"
                 type="email"
                 autoComplete="email"
                 value={email}
@@ -109,9 +109,9 @@ export default function RegisterPage() {
 
           {/* Password */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Password</label>
+            <label className="block text-sm font-medium text-slate-600 mb-1.5">Password</label>
             <input
-              className="input h-8 text-xs"
+              className="input h-10 text-sm"
               type="password"
               autoComplete="new-password"
               value={password}
@@ -121,11 +121,11 @@ export default function RegisterPage() {
           </div>
 
           {/* Department + Role */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Department</label>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">Department</label>
               <select
-                className="input h-8 text-xs bg-white"
+                className="input h-10 text-sm bg-white"
                 value={departmentId}
                 disabled={deptLoading || departments.length === 0}
                 onChange={(e) => setDepartmentId(Number(e.target.value))}
@@ -139,9 +139,9 @@ export default function RegisterPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Role</label>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">Role</label>
               <select
-                className="input h-8 text-xs bg-white"
+                className="input h-10 text-sm bg-white"
                 value={role}
                 onChange={(e) => setRole(e.target.value as UserRole)}
               >
@@ -154,9 +154,9 @@ export default function RegisterPage() {
 
           {/* Status */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Status</label>
+            <label className="block text-sm font-medium text-slate-600 mb-1.5">Status</label>
             <select
-              className="input h-8 text-xs bg-white"
+              className="input h-10 text-sm bg-white"
               value={status}
               onChange={(e) => setStatus(e.target.value as UserStatus)}
             >
@@ -176,12 +176,12 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <button className="btn-primary w-full h-8 text-xs mt-1" disabled={loading}>
+          <button className="btn-primary w-full h-10 text-sm mt-1" disabled={loading}>
             {loading ? "Creating account…" : "Create account"}
           </button>
         </form>
 
-        <p className="text-xs text-slate-400 text-center mt-4">
+        <p className="text-sm text-slate-400 text-center mt-5">
           Already have an account?{" "}
           <a className="text-[#175FFA] hover:underline font-medium" href="/login">Sign in</a>
         </p>

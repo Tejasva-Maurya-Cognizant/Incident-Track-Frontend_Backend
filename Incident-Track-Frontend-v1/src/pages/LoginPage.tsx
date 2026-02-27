@@ -24,26 +24,26 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--bg)" }}>
-      <div className="card w-full max-w-[360px] p-6">
+      <div className="card w-full max-w-[440px] p-7 sm:p-8">
 
         {/* Brand mark */}
-        <div className="flex items-center gap-2 mb-5">
-          <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: "var(--brand)" }}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+        <div className="flex items-center gap-2.5 mb-6">
+          <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: "var(--brand)" }}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
             </svg>
           </div>
-          <span className="text-sm font-semibold text-slate-900 tracking-tight">IncidentTrack</span>
+          <span className="text-base font-semibold text-slate-900 tracking-tight">IncidentTrack</span>
         </div>
 
-        <h2 className="text-sm font-semibold text-slate-900">Sign in to your account</h2>
-        <p className="text-xs text-slate-400 mt-0.5 mb-5">Enter your credentials to continue</p>
+        <h2 className="text-lg font-semibold text-slate-900">Sign in to your account</h2>
+        <p className="text-sm text-slate-400 mt-1 mb-6">Enter your credentials to continue</p>
 
-        <form onSubmit={onSubmit} className="space-y-3">
+        <form onSubmit={onSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
+            <label className="block text-sm font-medium text-slate-600 mb-1.5">Email</label>
             <input
-              className="input h-8 text-xs"
+              className="input h-10 text-sm"
               type="email"
               autoComplete="email"
               value={email}
@@ -52,9 +52,9 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Password</label>
+            <label className="block text-sm font-medium text-slate-600 mb-1.5">Password</label>
             <input
-              className="input h-8 text-xs"
+              className="input h-10 text-sm"
               type="password"
               autoComplete="current-password"
               value={password}
@@ -69,12 +69,12 @@ export default function LoginPage() {
             </div>
           )}
 
-          <button className="btn-primary w-full h-8 text-xs mt-1" disabled={loading}>
+          <button className="btn-primary w-full h-10 text-sm mt-1" disabled={loading}>
             {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
 
-        <p className="text-xs text-slate-400 text-center mt-4">
+        <p className="text-sm text-slate-400 text-center mt-5">
           Don&apos;t have an account?{" "}
           <a className="text-[#175FFA] hover:underline font-medium" href="/register">Create one</a>
         </p>

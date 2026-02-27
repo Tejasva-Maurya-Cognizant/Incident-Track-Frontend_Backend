@@ -10,6 +10,8 @@
   --card: #ffffff;
   --border: #E6EDF5;
   --inputBorder: #D7E1EC;
+  --app-shell-max: 1440px;
+  --page-panel-max: 896px;
 }
 
 html,
@@ -19,9 +21,37 @@ body,
   overflow: hidden;
 }
 
+html {
+  font-size: 100%;
+}
+
 body {
+  margin: 0;
+  min-height: 100%;
   font-family: Inter, system-ui, sans-serif;
   background: var(--bg);
+}
+
+@media (min-width: 1440px) {
+  html {
+    font-size: 106.25%;
+  }
+
+  :root {
+    --app-shell-max: 1680px;
+    --page-panel-max: 1088px;
+  }
+}
+
+@media (min-width: 1800px) {
+  html {
+    font-size: 112.5%;
+  }
+
+  :root {
+    --app-shell-max: 1880px;
+    --page-panel-max: 1216px;
+  }
 }
 
 /* ── Custom scrollbar ── */
@@ -59,6 +89,11 @@ body {
   .card {
     @apply bg-white border rounded-[12px];
     border-color: var(--border);
+  }
+
+  .page-panel {
+    width: 100%;
+    max-width: var(--page-panel-max);
   }
 
   .input {

@@ -12,6 +12,7 @@ export interface IncidentResponseDTO {
   categoryId: number;
   categoryName: string;
   subCategory?: string;
+  departmentName?: string | null;
   description: string;
 
   userId: number;
@@ -22,6 +23,7 @@ export interface IncidentResponseDTO {
   isCritical: boolean;
 
   reportedDate: string; // LocalDateTime as ISO string
+  resolvedDate?: string | null;
   slaHours?: number | null;
 }
 

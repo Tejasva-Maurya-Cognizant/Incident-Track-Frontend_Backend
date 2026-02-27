@@ -79,7 +79,7 @@ export default function TaskCreatePage() {
     };
 
     return (
-        <div className="max-w-2xl space-y-3">
+        <div className="page-panel space-y-3">
             {/* Breadcrumb */}
             <div className="flex items-center gap-1.5 text-xs text-slate-500">
                 <Link to="/tasks" className="hover:text-[#175FFA] transition-colors">Tasks</Link>

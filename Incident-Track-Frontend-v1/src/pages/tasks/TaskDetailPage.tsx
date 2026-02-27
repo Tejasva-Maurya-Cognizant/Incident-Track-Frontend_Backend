@@ -16,13 +16,13 @@ const NEXT_STATUSES: Record<string, TaskStatus[]> = {
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
     return (
         <div
-            className="flex items-start justify-between py-2 border-b last:border-0"
+            className="flex flex-col gap-1 py-2 border-b last:border-0 sm:flex-row sm:items-start sm:justify-between"
             style={{ borderColor: "var(--border)" }}
         >
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide w-28 shrink-0">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide w-full shrink-0 sm:w-28">
                 {label}
             </span>
-            <span className="text-xs text-slate-800 font-medium text-right">{children}</span>
+            <span className="text-xs text-slate-800 font-medium text-left sm:text-right">{children}</span>
         </div>
     );
 }
@@ -141,7 +141,7 @@ export default function TaskDetailPage() {
     const allowedStatuses = NEXT_STATUSES[role] ?? [];
 
     return (
-        <div className="space-y-3 max-w-2xl">
+        <div className="page-panel space-y-3">
             {/* Breadcrumb */}
             <div className="flex items-center gap-1.5 text-xs text-slate-500">
                 <Link to="/tasks" className="hover:text-[#175FFA] transition-colors">Tasks</Link>
@@ -174,7 +174,7 @@ export default function TaskDetailPage() {
                 </div>
 
                 {/* 2-column field grid */}
-                <div className="grid grid-cols-2 gap-x-6 gap-y-0">
+                <div className="grid grid-cols-1 gap-x-6 gap-y-0 md:grid-cols-2">
                     <InfoRow label="Incident">
                         <Link to={`/incidents/${data.incidentId}`} className="text-[#175FFA] hover:underline font-mono text-xs">
                             #{data.incidentId}

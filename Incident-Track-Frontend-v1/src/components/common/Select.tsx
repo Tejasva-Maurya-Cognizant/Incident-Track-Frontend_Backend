@@ -1,5 +1,3 @@
-import React from "react";
-
 type Option = { label: string; value: string | number };
 
 export default function Select({
