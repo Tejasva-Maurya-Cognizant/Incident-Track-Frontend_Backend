@@ -199,17 +199,17 @@ export default function TasksListPage() {
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-sm min-w-[580px]">
               <thead>
-                <tr className="border-b text-left" style={{ borderColor: "var(--border)", background: "#F8FAFD", position: "sticky", top: 0, zIndex: 5 }}>
+                <tr className="text-xs uppercase tracking-wide text-slate-500" style={{ position: "sticky", top: 0, zIndex: 5, background: "#F8FAFD" }}>
                   <SortableHeader label="ID" field="taskId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-12" />
-                  <SortableHeader label="Title" field="title" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-[180px]" />
-                  <th className="px-2 py-2 font-semibold text-slate-600 text-xs">Status</th>
-                  <th className="px-2 py-2 font-semibold text-slate-600 text-xs w-[80px]">Incident</th>
+                  <SortableHeader label="Title" field="title" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-[240px]" />
+                  <th className="text-left px-2 py-2 w-[90px]">Status</th>
+                  <th className="text-left px-2 py-2 w-[80px]">Incident</th>
                   {!isEmployee && (
-                    <th className="px-2 py-2 font-semibold text-slate-600 text-xs w-[110px]">Assigned To</th>
+                    <th className="text-left px-2 py-2 w-[110px]">Assigned To</th>
                   )}
                   <SortableHeader label="Created" field="createdDate" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-[100px]" />
                   <SortableHeader label="Due" field="dueDate" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-[100px]" />
-                  <th className="px-2 py-2 font-semibold text-slate-600 text-xs w-[60px]">Act.</th>
+                  <th className="text-left px-2 py-2 w-[90px]">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y" style={{ borderColor: "var(--border)" }}>
@@ -217,7 +217,7 @@ export default function TasksListPage() {
                   <tr key={task.taskId} className="hover:bg-[#FAFCFF] transition-colors">
                     <td className="px-2 py-2 text-slate-500 font-mono text-xs">#{task.taskId}</td>
                     <td className="px-2 py-2">
-                      <span className="font-medium text-slate-900 line-clamp-2 max-w-[180px] block leading-snug text-xs">
+                      <span className="font-medium text-slate-900 line-clamp-2 max-w-[240px] block leading-snug text-xs">
                         {task.title}
                       </span>
                     </td>
@@ -249,7 +249,7 @@ export default function TasksListPage() {
                     <td className="px-2 py-2">
                       <button
                         onClick={() => navigate(`/tasks/${task.taskId}`)}
-                        className="h-7 px-2 text-xs rounded-md border font-medium hover:bg-[#FAFCFF] transition-colors"
+                        className="h-7 px-3 text-xs rounded-md border font-medium hover:bg-[#FAFCFF] transition-colors"
                         style={{ borderColor: "var(--border)" }}
                       >
                         View

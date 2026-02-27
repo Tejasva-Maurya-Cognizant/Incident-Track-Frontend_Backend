@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { incidentsApi } from "../../features/incidents/api";
 import { categoriesApi } from "../../features/categories/api";
 import type { CategoryResponseDto } from "../../features/categories/types";
@@ -87,7 +88,14 @@ export default function IncidentCreatePage() {
   };
 
   return (
-    <div className="max-w-2xl space-y-4">
+    <div className="max-w-2xl space-y-3">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1.5 text-xs text-slate-500">
+        <Link to="/incidents" className="hover:text-[#175FFA] transition-colors">Incidents</Link>
+        <span>/</span>
+        <span className="text-slate-900 font-medium">Create Incident</span>
+      </div>
+
       <div>
         <h2 className="text-base font-semibold text-slate-900">Create Incident</h2>
         <p className="text-xs text-slate-500 mt-0.5">Report a new incident by selecting a category and sub-category.</p>
@@ -103,10 +111,10 @@ export default function IncidentCreatePage() {
               Category <span className="text-red-500">*</span>
             </label>
             {loadingCats ? (
-              <div className="input mt-1 flex items-center text-slate-400 text-sm">Loading…</div>
+              <div className="input mt-1 flex items-center text-slate-400 text-xs">Loading…</div>
             ) : (
               <select
-                className="input mt-1 bg-white"
+                className="input mt-1 bg-white text-xs"
                 value={parentCategory}
                 onChange={(e) => handleParentChange(e.target.value)}
               >
@@ -124,16 +132,16 @@ export default function IncidentCreatePage() {
               Sub-Category <span className="text-red-500">*</span>
             </label>
             {!parentCategory ? (
-              <select className="input mt-1 bg-white" disabled>
+              <select className="input mt-1 bg-white text-xs" disabled>
                 <option>— Select category first —</option>
               </select>
             ) : subCategories.length === 0 ? (
-              <select className="input mt-1 bg-white" disabled>
+              <select className="input mt-1 bg-white text-xs" disabled>
                 <option>No sub-categories available</option>
               </select>
             ) : (
               <select
-                className="input mt-1 bg-white"
+                className="input mt-1 bg-white text-xs"
                 value={categoryId ?? ""}
                 onChange={(e) => handleSubCategoryChange(Number(e.target.value))}
               >
@@ -167,9 +175,7 @@ export default function IncidentCreatePage() {
             Description <span className="text-red-500">*</span>
           </label>
           <textarea
-            className="w-full rounded-[8px] border px-2.5 py-2 text-sm outline-none mt-1 resize-none"
-            style={{ borderColor: "var(--inputBorder)" }}
-            rows={4}
+            className="input mt-1 h-20 resize-none py-2 text-xs"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe the issue clearly…"
@@ -182,7 +188,7 @@ export default function IncidentCreatePage() {
         </label>
 
         {err && (
-          <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-[8px] px-3 py-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12A9 9 0 113 12a9 9 0 0118 0z" />
             </svg>
@@ -190,18 +196,17 @@ export default function IncidentCreatePage() {
           </div>
         )}
 
-        <div className="flex items-center gap-2 pt-0.5">
-          <button className="btn-primary" disabled={loading || loadingCats}>
+        <div className="flex items-center gap-2 pt-1">
+          <button className="btn-primary h-8 text-xs px-4" disabled={loading || loadingCats}>
             {loading ? "Creating…" : "Create Incident"}
           </button>
-          <button
-            type="button"
-            onClick={() => window.history.back()}
-            className="h-9 px-3.5 rounded-[8px] border text-xs font-medium text-slate-700 hover:bg-[#FAFCFF] transition-colors"
+          <Link
+            to="/incidents"
+            className="h-8 px-4 rounded-[8px] border text-xs font-medium text-slate-700 hover:bg-[#FAFCFF] transition-colors inline-flex items-center"
             style={{ borderColor: "var(--border)" }}
           >
             Cancel
-          </button>
+          </Link>
         </div>
       </form>
     </div>

@@ -79,66 +79,62 @@ export default function TaskCreatePage() {
     };
 
     return (
-        <div className="max-w-2xl space-y-5">
-            {/* ── Breadcrumb ── */}
-            <div className="flex items-center gap-2 text-sm text-slate-500">
+        <div className="max-w-2xl space-y-3">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
                 <Link to="/tasks" className="hover:text-[#175FFA] transition-colors">Tasks</Link>
                 <span>/</span>
                 <span className="text-slate-900 font-medium">Create Task</span>
             </div>
 
-            {/* ── Form card ── */}
-            <div className="card overflow-hidden">
-                {/* Header */}
-                <div
-                    className="px-6 py-5"
-                    style={{ background: "linear-gradient(135deg, #175FFA 0%, #4F8EF7 100%)" }}
-                >
-                    <h1 className="text-lg font-bold text-white">Create New Task</h1>
-                    <p className="text-white/70 text-sm mt-0.5">
-                        Assign a task to an employee for a specific incident.
-                    </p>
+            {/* Page heading */}
+            <div>
+                <h2 className="text-base font-semibold text-slate-900">Create Task</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Assign a task to an employee for a specific incident.</p>
+            </div>
+
+            {/* Form card */}
+            <form onSubmit={onSubmit} className="card p-4 space-y-4">
+                {/* Title */}
+                <div>
+                    <label className="text-xs font-medium text-slate-700">
+                        Title <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                        className={`input mt-1 ${fieldErrors.title ? "border-red-400" : ""}`}
+                        value={title}
+                        onChange={(e) => { setTitle(e.target.value); setFieldErrors((p) => ({ ...p, title: "" })); }}
+                        placeholder="Short, descriptive task title"
+                    />
+                    {fieldErrors.title && <p className="text-xs text-red-500 mt-1">{fieldErrors.title}</p>}
                 </div>
 
-                <form onSubmit={onSubmit} className="px-6 py-6 space-y-5">
-                    {/* Title */}
-                    <div>
-                        <label className="text-sm font-medium text-slate-700">
-                            Title <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            className={`input mt-1 ${fieldErrors.title ? "border-red-400 focus:ring-red-300" : ""}`}
-                            value={title}
-                            onChange={(e) => { setTitle(e.target.value); setFieldErrors((p) => ({ ...p, title: "" })); }}
-                            placeholder="Short, descriptive task title"
-                        />
-                        {fieldErrors.title && <p className="text-xs text-red-500 mt-1">{fieldErrors.title}</p>}
-                    </div>
+                {/* Description */}
+                <div>
+                    <label className="text-xs font-medium text-slate-700">
+                        Description <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                        className={`input mt-1 h-20 resize-none py-2 text-xs ${fieldErrors.description ? "border-red-400" : ""}`}
+                        value={description}
+                        onChange={(e) => { setDescription(e.target.value); setFieldErrors((p) => ({ ...p, description: "" })); }}
+                        placeholder="Detailed steps or context for the assignee…"
+                    />
+                    {fieldErrors.description && <p className="text-xs text-red-500 mt-1">{fieldErrors.description}</p>}
+                </div>
 
-                    {/* Description */}
-                    <div>
-                        <label className="text-sm font-medium text-slate-700">
-                            Description <span className="text-red-500">*</span>
-                        </label>
-                        <textarea
-                            className={`input mt-1 h-28 resize-none py-2.5 ${fieldErrors.description ? "border-red-400" : ""}`}
-                            value={description}
-                            onChange={(e) => { setDescription(e.target.value); setFieldErrors((p) => ({ ...p, description: "" })); }}
-                            placeholder="Detailed steps or context for the assignee…"
-                        />
-                        {fieldErrors.description && <p className="text-xs text-red-500 mt-1">{fieldErrors.description}</p>}
-                    </div>
-
+                {/* Incident + Assignee side by side */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Incident selector */}
                     <div>
-                        <label className="text-sm font-medium text-slate-700">
+                        <label className="text-xs font-medium text-slate-700">
                             Linked Incident <span className="text-red-500">*</span>
                         </label>
                         {loadingData ? (
-                            <div className="input mt-1 flex items-center text-slate-400 text-sm">Loading incidents…</div>
+                            <div className="input mt-1 flex items-center text-slate-400 text-xs">Loading…</div>
                         ) : (
                             <select
-                                className={`input mt-1 bg-white ${fieldErrors.incidentId ? "border-red-400" : ""}`}
+                                className={`input mt-1 bg-white text-xs ${fieldErrors.incidentId ? "border-red-400" : ""}`}
                                 value={incidentId}
                                 onChange={(e) => { setIncidentId(e.target.value); setFieldErrors((p) => ({ ...p, incidentId: "" })); }}
                             >
@@ -155,58 +151,56 @@ export default function TaskCreatePage() {
 
                     {/* Assignee selector */}
                     <div>
-                        <label className="text-sm font-medium text-slate-700">
+                        <label className="text-xs font-medium text-slate-700">
                             Assign To <span className="text-red-500">*</span>
                         </label>
                         {loadingData ? (
-                            <div className="input mt-1 flex items-center text-slate-400 text-sm">Loading employees…</div>
+                            <div className="input mt-1 flex items-center text-slate-400 text-xs">Loading…</div>
                         ) : employees.length === 0 ? (
-                            <div className="input mt-1 flex items-center text-slate-400 text-sm">
-                                No employees found in your department.
-                            </div>
+                            <div className="input mt-1 flex items-center text-slate-400 text-xs">No employees found.</div>
                         ) : (
                             <select
-                                className={`input mt-1 bg-white ${fieldErrors.assignedTo ? "border-red-400" : ""}`}
+                                className={`input mt-1 bg-white text-xs ${fieldErrors.assignedTo ? "border-red-400" : ""}`}
                                 value={assignedTo}
                                 onChange={(e) => { setAssignedTo(e.target.value); setFieldErrors((p) => ({ ...p, assignedTo: "" })); }}
                             >
                                 <option value="">— Select employee —</option>
                                 {employees.map((emp) => (
                                     <option key={emp.userId} value={emp.userId}>
-                                        {emp.username} (#{emp.userId}) — {emp.email}
+                                        {emp.username} (#{emp.userId})
                                     </option>
                                 ))}
                             </select>
                         )}
                         {fieldErrors.assignedTo && <p className="text-xs text-red-500 mt-1">{fieldErrors.assignedTo}</p>}
                     </div>
+                </div>
 
-                    {/* Global error */}
-                    {err && (
-                        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12A9 9 0 113 12a9 9 0 0118 0z" />
-                            </svg>
-                            {err}
-                        </div>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-3 pt-2">
-                        <button type="submit" className="btn-primary" disabled={saving || loadingData}>
-                            {saving ? "Creating…" : "Create Task"}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => navigate(-1)}
-                            className="h-[46px] px-4 rounded-[10px] border text-sm font-medium text-slate-700 hover:bg-[#FAFCFF] transition-colors"
-                            style={{ borderColor: "var(--border)" }}
-                        >
-                            Cancel
-                        </button>
+                {/* Global error */}
+                {err && (
+                    <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-[8px] px-3 py-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12A9 9 0 113 12a9 9 0 0118 0z" />
+                        </svg>
+                        {err}
                     </div>
-                </form>
-            </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 pt-1">
+                    <button type="submit" className="btn-primary h-8 text-xs px-4" disabled={saving || loadingData}>
+                        {saving ? "Creating…" : "Create Task"}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => navigate("/tasks")}
+                        className="h-8 px-4 rounded-[8px] border text-xs font-medium text-slate-700 hover:bg-[#FAFCFF] transition-colors"
+                        style={{ borderColor: "var(--border)" }}
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </form>
         </div>
     );
 }

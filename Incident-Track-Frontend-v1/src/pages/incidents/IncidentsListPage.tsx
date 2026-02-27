@@ -184,10 +184,10 @@ export default function IncidentsListPage() {
               <tr className="text-xs uppercase tracking-wide text-slate-500" style={{ position: "sticky", top: 0, zIndex: 5, background: "#F8FAFD" }}>
                 <SortableHeader label="ID" field="incidentId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-14" />
                 <th className="text-left px-2 py-2 w-28">Category</th>
-                <th className="text-left px-2 py-2 w-32">Sub-Category</th>
+                <th className="text-left px-2 py-2 w-48">Sub-Category</th>
                 <SortableHeader label="Status" field="status" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-24" />
                 <SortableHeader label="Severity" field="calculatedSeverity" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-20" />
-                <SortableHeader label="Reported" field="reportedDate" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-28" />
+                <SortableHeader label="Reported" field="reportedDate" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-20" />
                 <th className="text-right px-2 py-2 w-24">Actions</th>
               </tr>
             </thead>
@@ -207,12 +207,12 @@ export default function IncidentsListPage() {
                     <td className="px-2 py-2 text-slate-700 w-28">
                       <span className="block truncate max-w-[112px] text-xs">{it.categoryName}</span>
                     </td>
-                    <td className="px-2 py-2 text-slate-600 w-32">
-                      <span className="block truncate max-w-[128px] text-xs">{it.subCategory ?? <span className="italic text-slate-400">—</span>}</span>
+                    <td className="px-2 py-2 text-slate-600 w-48">
+                      <span className="block truncate max-w-[192px] text-xs">{it.subCategory ?? <span className="italic text-slate-400">—</span>}</span>
                     </td>
                     <td className="px-2 py-2 w-24"><StatusBadge status={it.status} /></td>
                     <td className="px-2 py-2 w-20"><PriorityBadge severity={it.calculatedSeverity} /></td>
-                    <td className="px-2 py-2 text-slate-700 w-28 whitespace-nowrap text-xs">
+                    <td className="px-2 py-2 text-slate-700 w-20 whitespace-nowrap text-xs">
                       {new Date(it.reportedDate).toLocaleDateString()}<br />
                       <span className="text-slate-400">{new Date(it.reportedDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                     </td>

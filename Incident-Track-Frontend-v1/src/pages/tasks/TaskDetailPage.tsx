@@ -16,24 +16,23 @@ const NEXT_STATUSES: Record<string, TaskStatus[]> = {
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
     return (
         <div
-            className="flex items-start justify-between py-2.5 border-b last:border-0"
+            className="flex items-start justify-between py-2 border-b last:border-0"
             style={{ borderColor: "var(--border)" }}
         >
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide w-32 shrink-0">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide w-28 shrink-0">
                 {label}
             </span>
-            <span className="text-sm text-slate-800 font-medium text-right">{children}</span>
+            <span className="text-xs text-slate-800 font-medium text-right">{children}</span>
         </div>
     );
 }
 
 function UserChip({ userId, userMap }: { userId: number; userMap: Record<number, UserResponseDto> }) {
     const u = userMap[userId];
-    if (!u) return <span className="font-mono text-slate-400">#{userId}</span>;
+    if (!u) return <span className="font-mono text-slate-400 text-xs">#{userId}</span>;
     return (
-        <span className="inline-flex flex-col items-end gap-0.5">
-            <span className="font-medium text-slate-900">{u.username}</span>
-            <span className="text-xs text-slate-400 font-mono">#{u.userId}</span>
+        <span className="text-xs font-medium text-slate-900">
+            {u.username} <span className="text-[10px] text-slate-400 font-mono">#{u.userId}</span>
         </span>
     );
 }
@@ -120,26 +119,20 @@ export default function TaskDetailPage() {
 
     const fmtDate = (iso: string | null) => {
         if (!iso) return "—";
-        return new Date(iso).toLocaleString();
+        const d = new Date(iso);
+        return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     };
 
     if (loading)
-        return (
-            <div className="flex items-center justify-center py-24 text-sm text-slate-500">
-                Loading task...
-            </div>
-        );
+        return <div className="text-xs text-slate-500 py-8 text-center">Loading task…</div>;
 
     if (err)
         return (
-            <div className="card p-8 text-center text-sm text-red-600">
-                <div className="text-2xl mb-2">warning</div>
-                {err}
-                <div className="mt-4">
-                    <button onClick={() => navigate("/tasks")} className="text-[#175FFA] hover:underline text-sm">
-                        Back to Tasks
-                    </button>
-                </div>
+            <div className="card p-6 text-center">
+                <p className="text-xs text-red-600 mb-3">{err}</p>
+                <button onClick={() => navigate("/tasks")} className="text-xs text-[#175FFA] hover:underline">
+                    Back to Tasks
+                </button>
             </div>
         );
 
@@ -148,43 +141,37 @@ export default function TaskDetailPage() {
     const allowedStatuses = NEXT_STATUSES[role] ?? [];
 
     return (
-        <div className="space-y-5 max-w-3xl">
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-                <button onClick={() => navigate(-1)} className="hover:text-[#175FFA] transition-colors">
-                    Back
-                </button>
-                <span>/</span>
+        <div className="space-y-3 max-w-2xl">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
                 <Link to="/tasks" className="hover:text-[#175FFA] transition-colors">Tasks</Link>
                 <span>/</span>
                 <span className="text-slate-900 font-medium">Task #{data.taskId}</span>
             </div>
 
-            <div className="card overflow-hidden">
-                <div
-                    className="px-6 py-5"
-                    style={{ background: "linear-gradient(135deg, #175FFA 0%, #4F8EF7 100%)" }}
-                >
-                    <div className="flex items-start justify-between gap-3">
-                        <div>
-                            <div className="text-white/70 text-xs font-semibold uppercase tracking-wide mb-1">
-                                Task #{data.taskId}
-                            </div>
-                            <h2 className="text-lg font-bold text-white leading-snug">{data.title}</h2>
-                        </div>
-                        <TaskStatusBadge status={data.status} />
-                    </div>
+            {/* Page heading */}
+            <div>
+                <h2 className="text-base font-semibold text-slate-900 leading-tight">{data.title}</h2>
+                <p className="text-[11px] text-slate-400 mt-0.5">Task #{data.taskId}</p>
+            </div>
+
+            {/* Detail card */}
+            <div className="card p-4">
+                {/* Description */}
+                <div className="mb-3 pb-3 border-b" style={{ borderColor: "var(--border)" }}>
+                    <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1">Description</div>
+                    <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">{data.description}</p>
                 </div>
 
-                <div className="px-6 py-5 border-b" style={{ borderColor: "var(--border)" }}>
-                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Description</div>
-                    <p className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">{data.description}</p>
-                </div>
-
-                <div className="px-6 py-4">
+                {/* 2-column field grid */}
+                <div className="grid grid-cols-2 gap-x-6 gap-y-0">
                     <InfoRow label="Incident">
-                        <Link to={`/incidents/${data.incidentId}`} className="text-[#175FFA] hover:underline font-mono">
+                        <Link to={`/incidents/${data.incidentId}`} className="text-[#175FFA] hover:underline font-mono text-xs">
                             #{data.incidentId}
                         </Link>
+                    </InfoRow>
+                    <InfoRow label="Status">
+                        <TaskStatusBadge status={data.status} />
                     </InfoRow>
                     <InfoRow label="Assigned To">
                         <UserChip userId={data.assignedTo} userMap={userMap} />
@@ -195,41 +182,45 @@ export default function TaskDetailPage() {
                     <InfoRow label="Created">{fmtDate(data.createdDate)}</InfoRow>
                     <InfoRow label="Due Date">{fmtDate(data.dueDate)}</InfoRow>
                 </div>
-            </div>
 
-            {canUpdateStatus && (
-                <div className="card p-6 space-y-4">
-                    <h3 className="text-sm font-semibold text-slate-900">Update Status</h3>
-                    <div className="flex flex-wrap gap-2">
-                        {allowedStatuses.map((s) => (
+                {/* Update status — inline, no second card */}
+                {canUpdateStatus && (
+                    <div className="mt-3 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
+                        <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Update Status</div>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            {allowedStatuses.map((s) => (
+                                <button
+                                    key={s}
+                                    onClick={() => { setNewStatus(s); setUpdateOk(false); setUpdateErr(null); }}
+                                    className={`h-7 px-3 rounded-[8px] text-xs font-medium border transition-colors ${newStatus === s
+                                            ? "bg-[#175FFA] text-white border-[#175FFA]"
+                                            : "border-[var(--border)] text-slate-600 hover:bg-[#FAFCFF]"
+                                        }`}
+                                >
+                                    {s === "IN_PROGRESS" ? "In Progress" : s.charAt(0) + s.slice(1).toLowerCase()}
+                                </button>
+                            ))}
                             <button
-                                key={s}
-                                onClick={() => { setNewStatus(s); setUpdateOk(false); setUpdateErr(null); }}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${newStatus === s ? "bg-[#175FFA] text-white border-[#175FFA]" : "border-[var(--border)] text-slate-600 hover:bg-[#FAFCFF]"}`}
+                                className="btn-primary h-7 text-xs px-3 ml-auto"
+                                onClick={onUpdateStatus}
+                                disabled={updating || data.status === newStatus}
                             >
-                                {s === "IN_PROGRESS" ? "In Progress" : s.charAt(0) + s.slice(1).toLowerCase()}
+                                {updating ? "Updating…" : "Apply"}
                             </button>
-                        ))}
+                        </div>
+                        {updateErr && (
+                            <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-[8px] px-3 py-1.5 mt-2">
+                                {updateErr}
+                            </div>
+                        )}
+                        {updateOk && (
+                            <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-[8px] px-3 py-1.5 mt-2">
+                                Status updated to {newStatus}.
+                            </div>
+                        )}
                     </div>
-                    {updateErr && (
-                        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                            {updateErr}
-                        </div>
-                    )}
-                    {updateOk && (
-                        <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                            Status updated to {newStatus}.
-                        </div>
-                    )}
-                    <button
-                        className="btn-primary"
-                        onClick={onUpdateStatus}
-                        disabled={updating || data.status === newStatus}
-                    >
-                        {updating ? "Updating..." : "Apply Status"}
-                    </button>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }
