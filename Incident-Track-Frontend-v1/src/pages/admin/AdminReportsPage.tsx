@@ -897,7 +897,7 @@ export default function AdminReportsPage() {
                             <input className="input pl-8 h-8 text-xs w-full" placeholder="Search…" value={histSearch} onChange={(e) => setHistSearch(e.target.value)} />
                         </div>
                         {/* Filters inline */}
-                        <select className="input h-8 text-xs bg-white shrink-0" value={histTypeFilter} onChange={(e) => setHistTypeFilter(e.target.value as ReportType | "")}>
+                        <select className="input h-8 text-xs bg-white flex-1 min-w-0" value={histTypeFilter} onChange={(e) => setHistTypeFilter(e.target.value as ReportType | "")}>
                             <option value="">All Types</option>
                             <option value="VOLUME_TREND">Volume Trend</option>
                             <option value="SLA_COMPLIANCE">SLA Compliance</option>

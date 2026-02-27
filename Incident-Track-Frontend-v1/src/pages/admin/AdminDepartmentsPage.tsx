@@ -61,7 +61,7 @@ export default function AdminDepartmentsPage() {
       </div>
 
       <div className="card p-3 sticky-bar">
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 md:items-end">
           <div>
             <label className="text-xs text-slate-700">Department name</label>
             <input
@@ -72,7 +72,7 @@ export default function AdminDepartmentsPage() {
               onKeyDown={(e) => e.key === "Enter" && onCreate()}
             />
           </div>
-          <button className="btn-primary md:mt-5" type="button" onClick={onCreate}>
+          <button className="btn-primary" type="button" onClick={onCreate}>
             Create
           </button>
         </div>
