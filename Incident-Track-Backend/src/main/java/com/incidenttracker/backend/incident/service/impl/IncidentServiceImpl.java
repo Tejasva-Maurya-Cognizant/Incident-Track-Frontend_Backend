@@ -1,5 +1,6 @@
 package com.incidenttracker.backend.incident.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -16,6 +17,7 @@ import com.incidenttracker.backend.common.enums.ActionType;
 import com.incidenttracker.backend.common.enums.BreachStatus;
 import com.incidenttracker.backend.common.enums.IncidentSeverity;
 import com.incidenttracker.backend.common.enums.IncidentStatus;
+import com.incidenttracker.backend.common.enums.UserRole;
 import com.incidenttracker.backend.common.security.SecurityService;
 import com.incidenttracker.backend.incident.dto.IncidentRequestDTO;
 import com.incidenttracker.backend.incident.dto.IncidentResponseDTO;
@@ -41,6 +43,28 @@ public class IncidentServiceImpl implements IncidentService {
 	private final AuditService auditService;
 	private final NotificationService notificationService;
 
+	private User getCurrentUserRequired() {
+		return securityService.getCurrentUser()
+				.orElseThrow(() -> new RuntimeException("Authentication required"));
+	}
+
+	private Long getDepartmentIdRequired(User user) {
+		if (user.getDepartment() == null || user.getDepartment().getDepartmentId() == null) {
+			throw new IllegalStateException("Current user is not mapped to a department.");
+		}
+		return user.getDepartment().getDepartmentId();
+	}
+
+	private Incident getPrivilegedAccessibleIncident(Long incidentId, User currentUser) {
+		if (currentUser.getRole() == UserRole.MANAGER) {
+			return incidentRepository
+					.findByIncidentIdAndCategory_Department_DepartmentId(incidentId, getDepartmentIdRequired(currentUser))
+					.orElseThrow(() -> new RuntimeException("Incident not found or access denied"));
+		}
+		return incidentRepository.findById(incidentId)
+				.orElseThrow(() -> new RuntimeException("Incident not found"));
+	}
+
 	private IncidentSeverity calculateSeverity(Boolean isCritical, int slaHours) {
 		if (Boolean.TRUE.equals(isCritical)) {
 			return IncidentSeverity.CRITICAL;
@@ -64,8 +88,7 @@ public class IncidentServiceImpl implements IncidentService {
 		Category category = categoryRepository.findById(dto.getCategoryId())
 				.orElseThrow(() -> new RuntimeException("Category not found"));
 
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
+		User currentUser = getCurrentUserRequired();
 
 		Incident incident = new Incident();
 		incident.setDescription(dto.getDescription());
@@ -86,8 +109,7 @@ public class IncidentServiceImpl implements IncidentService {
 
 	@Override
 	public List<IncidentResponseDTO> getIncidentsUser() {
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
+		User currentUser = getCurrentUserRequired();
 
 		return incidentRepository.findByReportedBy_UserId(currentUser.getUserId())
 				.stream()
@@ -98,8 +120,7 @@ public class IncidentServiceImpl implements IncidentService {
 
 	@Override
 	public List<IncidentResponseDTO> getIncidentsByUserAndStatus(IncidentStatus status) {
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
+		User currentUser = getCurrentUserRequired();
 		return incidentRepository.findByReportedBy_UserIdAndStatus(currentUser.getUserId(), status)
 				.stream()
 				.map(this::mapToResponseDTO)
@@ -109,8 +130,7 @@ public class IncidentServiceImpl implements IncidentService {
 	@Override
 	public List<IncidentResponseDTO> getIncidentsByUserAndCalculatedSeverity(
 			IncidentSeverity calculatedSeverity) {
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
+		User currentUser = getCurrentUserRequired();
 		return incidentRepository
 				.findByReportedBy_UserIdAndCalculatedSeverity(currentUser.getUserId(), calculatedSeverity)
 				.stream()
@@ -120,8 +140,7 @@ public class IncidentServiceImpl implements IncidentService {
 
 	@Override
 	public List<IncidentResponseDTO> getIncidentsByUserAndUserMarkedCritical(Boolean isCritical) {
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
+		User currentUser = getCurrentUserRequired();
 
 		return incidentRepository.findByReportedBy_UserIdAndIsCritical(currentUser.getUserId(), isCritical)
 				.stream()
@@ -141,15 +160,14 @@ public class IncidentServiceImpl implements IncidentService {
 
 	@Override
 	public IncidentResponseDTO getIncidentDetailsForAdmin(Long incidentId) {
-		Incident incident = incidentRepository.findById(incidentId)
-				.orElseThrow(() -> new RuntimeException("Incident not found"));
+		User currentUser = getCurrentUserRequired();
+		Incident incident = getPrivilegedAccessibleIncident(incidentId, currentUser);
 		return mapToResponseDTO(incident);
 	}
 
 	@Override
 	public IncidentResponseDTO withdrawIncident(Long incidentId) {
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
+		User currentUser = getCurrentUserRequired();
 		Incident incident = incidentRepository.findByIncidentIdAndReportedBy_UserId(incidentId, currentUser.getUserId())
 				.orElseThrow(() -> new RuntimeException("Incident not found or access denied"));
 
@@ -158,11 +176,14 @@ public class IncidentServiceImpl implements IncidentService {
 			throw new AccessDeniedException("You are not authorized to cancel this incident.");
 		}
 
-		if (incident.getStatus() == IncidentStatus.RESOLVED || incident.getStatus() == IncidentStatus.IN_PROGRESS) {
+		if (incident.getStatus() == IncidentStatus.RESOLVED
+				|| incident.getStatus() == IncidentStatus.CANCELLED
+				|| incident.getStatus() == IncidentStatus.IN_PROGRESS) {
 			throw new IllegalStateException("Cannot cancel an incident that is already " + incident.getStatus());
 		}
 
 		incident.setStatus(IncidentStatus.CANCELLED);
+		incident.setResolvedDate(LocalDateTime.now());
 		Incident saved = incidentRepository.save(incident);
 
 		notificationService.notifyManagersCriticalOrCancelled(incident);
@@ -184,15 +205,18 @@ public class IncidentServiceImpl implements IncidentService {
 
 	@Override
 	public List<IncidentResponseDTO> getAllIncidents() {
-		return incidentRepository.findAll().stream().map(this::mapToResponseDTO).toList();
+		User currentUser = getCurrentUserRequired();
+		List<Incident> incidents = currentUser.getRole() == UserRole.MANAGER
+				? incidentRepository.findByCategory_Department_DepartmentId(getDepartmentIdRequired(currentUser))
+				: incidentRepository.findAll();
+		return incidents.stream().map(this::mapToResponseDTO).toList();
 	}
 
 	// ---- Paginated implementations ----
 
 	@Override
 	public PagedResponse<IncidentResponseDTO> getIncidentsUserPaged(Pageable pageable) {
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
+		User currentUser = getCurrentUserRequired();
 		Page<Incident> page = incidentRepository.findByReportedBy_UserId(currentUser.getUserId(), pageable);
 		return toPagedResponse(page);
 	}
@@ -200,8 +224,7 @@ public class IncidentServiceImpl implements IncidentService {
 	@Override
 	public PagedResponse<IncidentResponseDTO> getIncidentsByUserAndStatusPaged(IncidentStatus status,
 			Pageable pageable) {
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
+		User currentUser = getCurrentUserRequired();
 		Page<Incident> page = incidentRepository.findByReportedBy_UserIdAndStatus(currentUser.getUserId(), status,
 				pageable);
 		return toPagedResponse(page);
@@ -210,8 +233,7 @@ public class IncidentServiceImpl implements IncidentService {
 	@Override
 	public PagedResponse<IncidentResponseDTO> getIncidentsByUserAndCalculatedSeverityPaged(
 			IncidentSeverity calculatedSeverity, Pageable pageable) {
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
+		User currentUser = getCurrentUserRequired();
 		Page<Incident> page = incidentRepository.findByReportedBy_UserIdAndCalculatedSeverity(
 				currentUser.getUserId(), calculatedSeverity, pageable);
 		return toPagedResponse(page);
@@ -220,8 +242,7 @@ public class IncidentServiceImpl implements IncidentService {
 	@Override
 	public PagedResponse<IncidentResponseDTO> getIncidentsByUserAndUserMarkedCriticalPaged(
 			Boolean userMarkedCritical, Pageable pageable) {
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
+		User currentUser = getCurrentUserRequired();
 		Page<Incident> page = incidentRepository.findByReportedBy_UserIdAndIsCritical(
 				currentUser.getUserId(), userMarkedCritical, pageable);
 		return toPagedResponse(page);
@@ -229,13 +250,20 @@ public class IncidentServiceImpl implements IncidentService {
 
 	@Override
 	public PagedResponse<IncidentResponseDTO> getAllIncidentsPaged(Pageable pageable) {
-		Page<Incident> page = incidentRepository.findAll(pageable);
+		User currentUser = getCurrentUserRequired();
+		Page<Incident> page = currentUser.getRole() == UserRole.MANAGER
+				? incidentRepository.findByCategory_Department_DepartmentId(getDepartmentIdRequired(currentUser), pageable)
+				: incidentRepository.findAll(pageable);
 		return toPagedResponse(page);
 	}
 
 	@Override
 	public PagedResponse<IncidentResponseDTO> getAllIncidentsByStatusPaged(IncidentStatus status, Pageable pageable) {
-		Page<Incident> page = incidentRepository.findByStatus(status, pageable);
+		User currentUser = getCurrentUserRequired();
+		Page<Incident> page = currentUser.getRole() == UserRole.MANAGER
+				? incidentRepository.findByStatusAndCategory_Department_DepartmentId(
+						status, getDepartmentIdRequired(currentUser), pageable)
+				: incidentRepository.findByStatus(status, pageable);
 		return toPagedResponse(page);
 	}
 
@@ -257,18 +285,32 @@ public class IncidentServiceImpl implements IncidentService {
 		// If the incident is breached earlier, a row exists in incident_sla_breach.
 		// When status becomes RESOLVED/CLOSED, we update that row →
 		// BreachStatus.RESOLVED.
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
+		User currentUser = getCurrentUserRequired();
+		Incident incident = getPrivilegedAccessibleIncident(incidentId, currentUser);
 
-		// (Optional) Only Manager/Admin should update - you can enforce RBAC here
-		// if (currentUser.getRole() == UserRole.EMPLOYEE) throw new
-		// AccessDeniedException("Not allowed");
+		if (request == null || request.getStatus() == null) {
+			throw new IllegalStateException("A valid incident status is required.");
+		}
 
-		Incident incident = incidentRepository.findById(incidentId)
-				.orElseThrow(() -> new RuntimeException("Incident not found"));
+		if (incident.getStatus() == IncidentStatus.RESOLVED || incident.getStatus() == IncidentStatus.CANCELLED) {
+			throw new IllegalStateException("Closed incidents cannot change status.");
+		}
+
+		if (incident.getStatus() == IncidentStatus.IN_PROGRESS) {
+			throw new IllegalStateException("Incidents with an active task must be closed through task completion.");
+		}
+
+		if (request.getStatus() == IncidentStatus.OPEN || request.getStatus() == IncidentStatus.IN_PROGRESS) {
+			throw new IllegalStateException("Incident status can only be changed manually to RESOLVED or CANCELLED.");
+		}
+
+		if (incident.getStatus() == request.getStatus()) {
+			throw new IllegalStateException("Incident is already " + request.getStatus() + ".");
+		}
 
 		IncidentStatus oldStatus = incident.getStatus();
 		incident.setStatus(request.getStatus());
+		incident.setResolvedDate(LocalDateTime.now());
 
 		Incident saved = incidentRepository.save(incident);
 		if (saved.getStatus() == IncidentStatus.RESOLVED) {
@@ -302,12 +344,15 @@ public class IncidentServiceImpl implements IncidentService {
 		dto.setStatus(incident.getStatus());
 		dto.setCalculatedSeverity(incident.getCalculatedSeverity());
 		dto.setReportedDate(incident.getReportedDate());
+		dto.setResolvedDate(incident.getResolvedDate());
 		dto.setIsCritical(incident.getIsCritical());
 		dto.setUserId(incident.getReportedBy().getUserId());
 		dto.setUsername(incident.getReportedBy().getUsername());
 		dto.setCategoryId(incident.getCategory().getCategoryId());
 		dto.setCategoryName(incident.getCategory().getCategoryName());
 		dto.setSubCategory(incident.getCategory().getSubCategory());
+		dto.setDepartmentName(
+				incident.getCategory().getDepartment() != null ? incident.getCategory().getDepartment().getDepartmentName() : null);
 		dto.setSlaHours(incident.getCategory().getSlaTimeHours());
 
 		return dto;

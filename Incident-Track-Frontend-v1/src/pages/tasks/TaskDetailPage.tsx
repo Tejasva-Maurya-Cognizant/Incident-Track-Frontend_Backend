@@ -7,12 +7,6 @@ import type { UserResponseDto } from "../../features/auth/types";
 import { useAuth } from "../../context/AuthContext";
 import TaskStatusBadge from "../../components/common/TaskStatusBadge";
 
-const NEXT_STATUSES: Record<string, TaskStatus[]> = {
-    EMPLOYEE: ["IN_PROGRESS", "COMPLETED"],
-    MANAGER: ["PENDING", "IN_PROGRESS", "COMPLETED"],
-    ADMIN: ["PENDING", "IN_PROGRESS", "COMPLETED"],
-};
-
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
     return (
         <div
@@ -87,7 +81,7 @@ export default function TaskDetailPage() {
                 res = found;
             }
             setData(res);
-            setNewStatus(res.status);
+            setNewStatus(res.status === "PENDING" ? "IN_PROGRESS" : res.status === "IN_PROGRESS" ? "COMPLETED" : res.status);
             loadUserInfo(res.assignedTo, res.assignedBy);
         } catch (e: any) {
             setErr(e?.response?.data?.message ?? "Failed to load task");
@@ -138,7 +132,13 @@ export default function TaskDetailPage() {
 
     if (!data) return null;
 
-    const allowedStatuses = NEXT_STATUSES[role] ?? [];
+    const allowedStatuses: TaskStatus[] = !canUpdateStatus
+        ? []
+        : data.status === "PENDING"
+            ? ["IN_PROGRESS"]
+            : data.status === "IN_PROGRESS"
+                ? ["COMPLETED"]
+                : [];
 
     return (
         <div className="page-panel space-y-3">
@@ -194,7 +194,7 @@ export default function TaskDetailPage() {
                 </div>
 
                 {/* Update status — inline, no second card */}
-                {canUpdateStatus && (
+                {canUpdateStatus && allowedStatuses.length > 0 && (
                     <div className="mt-3 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
                         <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Update Status</div>
                         <div className="flex flex-wrap items-center gap-1.5">
@@ -213,7 +213,7 @@ export default function TaskDetailPage() {
                             <button
                                 className="btn-primary h-7 text-xs px-3 ml-auto"
                                 onClick={onUpdateStatus}
-                                disabled={updating || data.status === newStatus}
+                                disabled={updating}
                             >
                                 {updating ? "Updating…" : "Apply"}
                             </button>

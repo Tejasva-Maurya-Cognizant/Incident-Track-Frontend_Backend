@@ -40,7 +40,9 @@ export default function TaskCreatePage() {
                 ]);
 
                 if (empList.status === "fulfilled") setEmployees(empList.value);
-                if (incList.status === "fulfilled") setIncidents(incList.value);
+                if (incList.status === "fulfilled") {
+                    setIncidents(incList.value.filter((incident) => incident.status === "OPEN"));
+                }
             } finally {
                 setLoadingData(false);
             }
@@ -90,7 +92,7 @@ export default function TaskCreatePage() {
             {/* Page heading */}
             <div>
                 <h2 className="text-base font-semibold text-slate-900">Create Task</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Assign a task to an employee for a specific incident.</p>
+                <p className="text-xs text-slate-500 mt-0.5">Assign a task to an employee for an open incident in your department.</p>
             </div>
 
             {/* Form card */}
@@ -132,6 +134,8 @@ export default function TaskCreatePage() {
                         </label>
                         {loadingData ? (
                             <div className="input mt-1 flex items-center text-slate-400 text-xs">Loading…</div>
+                        ) : incidents.length === 0 ? (
+                            <div className="input mt-1 flex items-center text-slate-400 text-xs">No open incidents available.</div>
                         ) : (
                             <select
                                 className={`input mt-1 bg-white text-xs ${fieldErrors.incidentId ? "border-red-400" : ""}`}

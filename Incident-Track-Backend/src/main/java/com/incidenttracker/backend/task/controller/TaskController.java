@@ -22,7 +22,7 @@ import com.incidenttracker.backend.common.enums.TaskStatus;
 import com.incidenttracker.backend.task.dto.TaskRequestDto;
 import com.incidenttracker.backend.task.dto.TaskResponseDto;
 import com.incidenttracker.backend.task.dto.TaskStatusUpdateRequestDto;
-import com.incidenttracker.backend.task.service.impl.TaskServiceImpl;
+import com.incidenttracker.backend.task.service.TaskService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +32,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TaskController {
 
-    private final TaskServiceImpl taskService;
+    private final TaskService taskService;
 
     // Creates a task for an incident and returns 201 with created task details.
     @PreAuthorize("hasAnyRole('MANAGER')")
@@ -213,7 +213,7 @@ public class TaskController {
     public ResponseEntity<String> updateStatus(@PathVariable Long taskId,
             @RequestBody TaskStatusUpdateRequestDto request) {
         taskService.updateTaskStatus(taskId, request.status());
-        return ResponseEntity.ok("Incident status updated");
+        return ResponseEntity.ok("Task status updated");
     }
 
 }

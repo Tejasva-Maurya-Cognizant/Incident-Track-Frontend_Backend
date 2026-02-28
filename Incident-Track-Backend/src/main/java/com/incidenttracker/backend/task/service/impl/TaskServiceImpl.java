@@ -47,32 +47,101 @@ public class TaskServiceImpl implements TaskService {
         private final IncidentSlaBreachRepository breachRepository;
         private final NotificationService notificationService;
 
+        private User getCurrentUserRequired() {
+                return securityService.getCurrentUser()
+                                .orElseThrow(() -> new AuthenticationRequiredException("Authentication required"));
+        }
+
+        private boolean isAdmin(User user) {
+                return user.getRole() == UserRole.ADMIN;
+        }
+
+        private boolean isManager(User user) {
+                return user.getRole() == UserRole.MANAGER;
+        }
+
+        private Long getDepartmentIdRequired(User user) {
+                if (user.getDepartment() == null || user.getDepartment().getDepartmentId() == null) {
+                        throw new ConflictException("Current user is not mapped to a department.");
+                }
+                return user.getDepartment().getDepartmentId();
+        }
+
+        private Long getIncidentDepartmentId(Incident incident) {
+                if (incident.getCategory() == null || incident.getCategory().getDepartment() == null
+                                || incident.getCategory().getDepartment().getDepartmentId() == null) {
+                        throw new ConflictException("Incident is not mapped to a department.");
+                }
+                return incident.getCategory().getDepartment().getDepartmentId();
+        }
+
+        private Task getTaskVisibleToPrivilegedUser(Long taskId, User currentUser) {
+                if (isManager(currentUser)) {
+                        return taskRepository.findByTaskIdAndIncident_Category_Department_DepartmentId(
+                                        taskId, getDepartmentIdRequired(currentUser))
+                                        .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+                }
+                if (isAdmin(currentUser)) {
+                        return taskRepository.findById(taskId)
+                                        .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+                }
+                throw new ForbiddenException("Only admins and managers can access this task.");
+        }
+
         @Override
-        // Creates a task, links it to incident/user, and records audit entries.
-        // Incident status is moved to IN_PROGRESS in entity @PrePersist.
-        @Transactional // Good practice for creation logic
+        @Transactional
         public TaskResponseDto createTask(TaskRequestDto request) {
+                User currentUser = getCurrentUserRequired();
+                if (!isManager(currentUser)) {
+                        throw new ForbiddenException("Only managers can create tasks.");
+                }
+
+                Long managerDepartmentId = getDepartmentIdRequired(currentUser);
 
                 Incident incident = incidentRepository.findById(request.getIncidentId())
                                 .orElseThrow(() -> new ResourceNotFoundException("Incident not found"));
 
+                if (!managerDepartmentId.equals(getIncidentDepartmentId(incident))) {
+                        throw new ForbiddenException("You can only create tasks for incidents in your department.");
+                }
+
+                if (incident.getStatus() == IncidentStatus.RESOLVED || incident.getStatus() == IncidentStatus.CANCELLED) {
+                        throw new ConflictException("Cannot create a task for a closed incident.");
+                }
+
+                if (incident.getStatus() != IncidentStatus.OPEN) {
+                        throw new ConflictException("A task can only be created when the incident is OPEN.");
+                }
+
+                if (taskRepository.existsByIncident_IncidentId(incident.getIncidentId())) {
+                        throw new ConflictException("This incident already has a task assigned.");
+                }
+
                 User assignedTo = userRepository.findById(request.getAssignedTo())
                                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-                User currentUser = securityService.getCurrentUser()
-                                .orElseThrow(() -> new AuthenticationRequiredException("Authentication required"));
+                if (assignedTo.getRole() != UserRole.EMPLOYEE) {
+                        throw new BadRequestException("Tasks can only be assigned to employees.");
+                }
 
-                Task task = Task.builder().title(request.getTitle())
+                if (!managerDepartmentId.equals(getDepartmentIdRequired(assignedTo))) {
+                        throw new ForbiddenException("Assignee must belong to the same department.");
+                }
+
+                incident.setStatus(IncidentStatus.IN_PROGRESS);
+
+                Task task = Task.builder()
+                                .title(request.getTitle())
                                 .description(request.getDescription())
                                 .assignedTo(assignedTo)
                                 .assignedBy(currentUser)
                                 .dueDate(incident.getSlaDueAt())
                                 .incident(incident)
+                                .status(TaskStatus.PENDING)
                                 .build();
 
                 Task saved = taskRepository.save(task);
 
-                // ✅ Audit log: task created + assigned
                 auditService.log(
                                 incident,
                                 currentUser,
@@ -82,65 +151,80 @@ public class TaskServiceImpl implements TaskService {
                                                 + ", assignedTo=" + assignedTo.getUserId()
                                                 + ", dueDate=" + saved.getDueDate());
 
-                // ✅ Audit log: incident moved to IN_PROGRESS (because task creation triggers
-                // it)
                 auditService.log(
                                 incident,
                                 currentUser,
                                 ActionType.INCIDENT_STATUS_CHANGED,
-                                "Incident moved to IN_PROGRESS because a task was created (TaskId=" + saved.getTaskId()
-                                                + ")");
+                                "Incident moved to IN_PROGRESS because TaskId=" + saved.getTaskId() + " was created");
 
                 notificationService.notifyEmployee(saved);
 
                 return mapToResponse(saved);
-
         }
 
         @Override
-        // Returns all tasks mapped to response DTOs.
         public List<TaskResponseDto> getAllTasks() {
-                return taskRepository.findAll()
-                                .stream()
+                User currentUser = getCurrentUserRequired();
+                List<Task> tasks;
+                if (isManager(currentUser)) {
+                        tasks = taskRepository.findByIncident_Category_Department_DepartmentId(
+                                        getDepartmentIdRequired(currentUser));
+                } else if (isAdmin(currentUser)) {
+                        tasks = taskRepository.findAll();
+                } else {
+                        throw new ForbiddenException("Only admins and managers can view all tasks.");
+                }
+
+                return tasks.stream()
                                 .map(this::mapToResponse)
                                 .toList();
         }
 
         @Override
-        // Returns one task by id or throws not-found.
         public TaskResponseDto getTaskByTaskId(Long taskId) {
-                Task task = taskRepository.findById(taskId)
-                                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
-
-                return mapToResponse(task);
+                User currentUser = getCurrentUserRequired();
+                return mapToResponse(getTaskVisibleToPrivilegedUser(taskId, currentUser));
         }
 
         @Override
-        // Returns tasks associated with a given incident id.
         public List<TaskResponseDto> getTaskByIncidentId(Long incidentId) {
+                User currentUser = getCurrentUserRequired();
+                List<Task> tasks;
+                if (isManager(currentUser)) {
+                        tasks = taskRepository.findByIncident_IncidentIdAndIncident_Category_Department_DepartmentId(
+                                        incidentId, getDepartmentIdRequired(currentUser));
+                } else if (isAdmin(currentUser)) {
+                        tasks = taskRepository.findByIncident_IncidentId(incidentId);
+                } else {
+                        throw new ForbiddenException("Only admins and managers can view tasks by incident.");
+                }
 
-                return taskRepository.findByIncident_IncidentId(incidentId)
-                                .stream()
+                return tasks.stream()
                                 .map(this::mapToResponse)
                                 .toList();
         }
 
         @Override
-        // Returns tasks assigned to the provided user id.
         public List<TaskResponseDto> getTaskByAssignedTo(Long assignedTo) {
+                User currentUser = getCurrentUserRequired();
+                List<Task> tasks;
+                if (isManager(currentUser)) {
+                        tasks = taskRepository.findByAssignedTo_UserIdAndIncident_Category_Department_DepartmentId(
+                                        assignedTo, getDepartmentIdRequired(currentUser));
+                } else if (isAdmin(currentUser)) {
+                        tasks = taskRepository.findByAssignedTo_UserId(assignedTo);
+                } else {
+                        throw new ForbiddenException("Only admins and managers can view tasks by assignee.");
+                }
 
-                return taskRepository.findByAssignedTo_UserId(assignedTo)
-                                .stream()
+                return tasks.stream()
                                 .map(this::mapToResponse)
                                 .toList();
         }
 
         @Override
-        // Returns tasks assigned to the currently authenticated user.
         public List<TaskResponseDto> getTaskAssigenedToMe() {
-                User currentUser = securityService.getCurrentUser()
-                                .orElseThrow(() -> new AuthenticationRequiredException("Authentication required"));
-
+                User currentUser = getCurrentUserRequired();
                 return taskRepository.findByAssignedTo_UserId(currentUser.getUserId())
                                 .stream()
                                 .map(this::mapToResponse)
@@ -148,19 +232,26 @@ public class TaskServiceImpl implements TaskService {
         }
 
         @Override
-        // Returns tasks created by the provided assigner id.
         public List<TaskResponseDto> getTaskByAssignedBy(Long assignedBy) {
-                return taskRepository.findByAssignedBy_UserId(assignedBy)
-                                .stream()
+                User currentUser = getCurrentUserRequired();
+                List<Task> tasks;
+                if (isManager(currentUser)) {
+                        tasks = taskRepository.findByAssignedBy_UserIdAndIncident_Category_Department_DepartmentId(
+                                        assignedBy, getDepartmentIdRequired(currentUser));
+                } else if (isAdmin(currentUser)) {
+                        tasks = taskRepository.findByAssignedBy_UserId(assignedBy);
+                } else {
+                        throw new ForbiddenException("Only admins and managers can view tasks by assigner.");
+                }
+
+                return tasks.stream()
                                 .map(this::mapToResponse)
                                 .toList();
         }
 
         @Override
-        // Returns tasks created by the current user.
         public List<TaskResponseDto> getTaskByAssignedByMe() {
-                User currentUser = securityService.getCurrentUser()
-                                .orElseThrow(() -> new AuthenticationRequiredException("Authentication required"));
+                User currentUser = getCurrentUserRequired();
                 return taskRepository.findByAssignedBy_UserId(currentUser.getUserId())
                                 .stream()
                                 .map(this::mapToResponse)
@@ -168,34 +259,37 @@ public class TaskServiceImpl implements TaskService {
         }
 
         @Override
-        // Returns tasks filtered by status.
         public List<TaskResponseDto> getTasktByStatus(TaskStatus status) {
-                return taskRepository.findByStatus(status)
-                                .stream()
+                User currentUser = getCurrentUserRequired();
+                List<Task> tasks;
+                if (isManager(currentUser)) {
+                        tasks = taskRepository.findByStatusAndIncident_Category_Department_DepartmentId(
+                                        status, getDepartmentIdRequired(currentUser));
+                } else if (isAdmin(currentUser)) {
+                        tasks = taskRepository.findByStatus(status);
+                } else {
+                        throw new ForbiddenException("Only admins and managers can view tasks by status.");
+                }
+
+                return tasks.stream()
                                 .map(this::mapToResponse)
                                 .toList();
         }
 
         @Override
-        // Enforces role-based workflow transitions:
-        // MANAGER can move PENDING->IN_PROGRESS, EMPLOYEE can move
-        // IN_PROGRESS->COMPLETED.
-        // On completion, incident may be auto-resolved if all tasks are completed.
         @Transactional
-        public void updateTaskStatus(Long taskId, String status) { // userId → who is trying to change
-                                                                   // status
-
+        public void updateTaskStatus(Long taskId, String status) {
                 Task task = taskRepository.findById(taskId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
 
-                // User user = userRepository.findById(userId)
-                // .orElseThrow(() -> new ResourceNotFoundException("User not found: " +
-                // userId));
-                User currentUser = securityService.getCurrentUser()
-                                .orElseThrow(() -> new AuthenticationRequiredException("Authentication required"));
+                User currentUser = getCurrentUserRequired();
+                Incident incident = task.getIncident();
+
+                if (incident.getStatus() == IncidentStatus.RESOLVED || incident.getStatus() == IncidentStatus.CANCELLED) {
+                        throw new ConflictException("Cannot update a task for a closed incident.");
+                }
 
                 TaskStatus newStatus;
-
                 try {
                         newStatus = TaskStatus.valueOf(status.toUpperCase());
                 } catch (IllegalArgumentException ex) {
@@ -203,37 +297,45 @@ public class TaskServiceImpl implements TaskService {
                 }
 
                 TaskStatus currentStatus = task.getStatus();
+                if (currentStatus == newStatus) {
+                        throw new ConflictException("Task is already " + newStatus + ".");
+                }
 
-                // workflow rule for changing status
+                boolean allowedActor = false;
+                if (isManager(currentUser)) {
+                        allowedActor = task.getAssignedBy() != null
+                                        && task.getAssignedBy().getUserId().equals(currentUser.getUserId())
+                                        && getDepartmentIdRequired(currentUser).equals(getIncidentDepartmentId(incident));
+                } else if (currentUser.getRole() == UserRole.EMPLOYEE) {
+                        allowedActor = task.getAssignedTo().getUserId().equals(currentUser.getUserId());
+                }
+
+                if (!allowedActor) {
+                        throw new ForbiddenException("Only the assigned employee or manager can update this task.");
+                }
+
                 switch (newStatus) {
                         case IN_PROGRESS -> {
                                 if (currentStatus != TaskStatus.PENDING) {
                                         throw new ConflictException("Only PENDING tasks can move to IN_PROGRESS");
-                                }
-                                if (currentUser.getRole() != UserRole.MANAGER || task.getAssignedBy() == null
-                                                || !task.getAssignedBy().getUserId()
-                                                                .equals(currentUser.getUserId())) {
-                                        throw new ForbiddenException(
-                                                        "Only the assigned MANAGER can move task to IN_PROGRESS");
                                 }
                         }
                         case COMPLETED -> {
                                 if (currentStatus != TaskStatus.IN_PROGRESS) {
                                         throw new ConflictException("Only IN_PROGRESS tasks can be COMPLETED");
                                 }
-                                if (currentUser.getRole() != UserRole.EMPLOYEE
-                                                || !task.getAssignedTo().getUserId().equals(currentUser.getUserId())) {
-                                        throw new ForbiddenException("Only the assigned EMPLOYEE can COMPLETE task");
-                                }
                         }
                         default -> throw new ConflictException("Invalid status transition");
                 }
 
                 TaskStatus oldStatus = task.getStatus();
+                if (newStatus == TaskStatus.COMPLETED) {
+                        task.setCompletedDate(LocalDateTime.now());
+                }
                 task.setStatus(newStatus);
+
                 Task savedTask = taskRepository.save(task);
 
-                // ✅ Audit log for task status change
                 auditService.log(
                                 savedTask.getIncident(),
                                 currentUser,
@@ -241,98 +343,119 @@ public class TaskServiceImpl implements TaskService {
                                 "TaskId=" + savedTask.getTaskId() + " status: " + oldStatus + " -> " + newStatus);
 
                 if (newStatus == TaskStatus.COMPLETED) {
-                        task.setCompletedDate(LocalDateTime.now());
-                }
-                // ✅ If task completed, maybe resolve incident
-                if (newStatus == TaskStatus.COMPLETED) {
+                        IncidentStatus oldIncidentStatus = incident.getStatus();
+                        incident.setStatus(IncidentStatus.RESOLVED);
+                        incident.setResolvedDate(LocalDateTime.now());
 
-                        Long incidentId = savedTask.getIncident().getIncidentId();
+                        Incident savedIncident = incidentRepository.save(incident);
+                        notificationService.notifyReporterIncidentResolved(savedIncident);
 
-                        if (allTasksCompletedForIncident(incidentId)) {
+                        auditService.log(
+                                        savedIncident,
+                                        currentUser,
+                                        ActionType.INCIDENT_STATUS_CHANGED,
+                                        "Incident status: " + oldIncidentStatus
+                                                        + " -> RESOLVED (TaskId=" + savedTask.getTaskId() + " completed)");
 
-                                Incident incident = savedTask.getIncident();
-                                IncidentStatus oldIncidentStatus = incident.getStatus();
-
-                                // choose your final incident status here:
-                                incident.setStatus(IncidentStatus.RESOLVED);
-                                Incident savedIncident = incidentRepository.save(incident);
-                                notificationService.notifyReporterIncidentResolved(savedIncident);
+                        breachRepository.findByIncident_IncidentId(savedIncident.getIncidentId()).ifPresent(breach -> {
+                                breach.setBreachStatus(BreachStatus.RESOLVED);
+                                breachRepository.save(breach);
 
                                 auditService.log(
                                                 savedIncident,
                                                 currentUser,
-                                                ActionType.INCIDENT_STATUS_CHANGED,
-                                                "Incident status: " + oldIncidentStatus
-                                                                + " -> RESOLVED (All tasks completed)");
-
-                                // ✅ Close breach record if exists
-                                breachRepository.findByIncident_IncidentId(incidentId).ifPresent(breach -> {
-                                        breach.setBreachStatus(BreachStatus.RESOLVED);
-                                        breachRepository.save(breach);
-
-                                        auditService.log(
-                                                        savedIncident,
-                                                        currentUser,
-                                                        ActionType.INCIDENT_UPDATED,
-                                                        "Breach closed because incident was RESOLVED");
-                                });
-                        }
+                                                ActionType.INCIDENT_UPDATED,
+                                                "Breach closed because incident was RESOLVED");
+                        });
                 }
-
         }
-
-        // Utility: checks whether every task of an incident is completed.
-        private boolean allTasksCompletedForIncident(Long incidentId) {
-                return taskRepository.findByIncident_IncidentId(incidentId)
-                                .stream()
-                                .allMatch(t -> t.getStatus() == TaskStatus.COMPLETED);
-        }
-
-        // ---- Paginated implementations ----
 
         @Override
         public PagedResponse<TaskResponseDto> getAllTasksPaged(Pageable pageable) {
-                Page<Task> page = taskRepository.findAll(pageable);
+                User currentUser = getCurrentUserRequired();
+                Page<Task> page;
+                if (isManager(currentUser)) {
+                        page = taskRepository.findByIncident_Category_Department_DepartmentId(
+                                        getDepartmentIdRequired(currentUser), pageable);
+                } else if (isAdmin(currentUser)) {
+                        page = taskRepository.findAll(pageable);
+                } else {
+                        throw new ForbiddenException("Only admins and managers can view all tasks.");
+                }
                 return toPagedResponse(page);
         }
 
         @Override
         public PagedResponse<TaskResponseDto> getTaskByIncidentIdPaged(Long incidentId, Pageable pageable) {
-                Page<Task> page = taskRepository.findByIncident_IncidentId(incidentId, pageable);
+                User currentUser = getCurrentUserRequired();
+                Page<Task> page;
+                if (isManager(currentUser)) {
+                        page = taskRepository.findByIncident_IncidentIdAndIncident_Category_Department_DepartmentId(
+                                        incidentId, getDepartmentIdRequired(currentUser), pageable);
+                } else if (isAdmin(currentUser)) {
+                        page = taskRepository.findByIncident_IncidentId(incidentId, pageable);
+                } else {
+                        throw new ForbiddenException("Only admins and managers can view tasks by incident.");
+                }
                 return toPagedResponse(page);
         }
 
         @Override
         public PagedResponse<TaskResponseDto> getTaskByAssignedToPaged(Long assignedTo, Pageable pageable) {
-                Page<Task> page = taskRepository.findByAssignedTo_UserId(assignedTo, pageable);
+                User currentUser = getCurrentUserRequired();
+                Page<Task> page;
+                if (isManager(currentUser)) {
+                        page = taskRepository.findByAssignedTo_UserIdAndIncident_Category_Department_DepartmentId(
+                                        assignedTo, getDepartmentIdRequired(currentUser), pageable);
+                } else if (isAdmin(currentUser)) {
+                        page = taskRepository.findByAssignedTo_UserId(assignedTo, pageable);
+                } else {
+                        throw new ForbiddenException("Only admins and managers can view tasks by assignee.");
+                }
                 return toPagedResponse(page);
         }
 
         @Override
         public PagedResponse<TaskResponseDto> getTaskAssignedToMePaged(Pageable pageable) {
-                User currentUser = securityService.getCurrentUser()
-                                .orElseThrow(() -> new AuthenticationRequiredException("Authentication required"));
+                User currentUser = getCurrentUserRequired();
                 Page<Task> page = taskRepository.findByAssignedTo_UserId(currentUser.getUserId(), pageable);
                 return toPagedResponse(page);
         }
 
         @Override
         public PagedResponse<TaskResponseDto> getTaskByAssignedByPaged(Long assignedBy, Pageable pageable) {
-                Page<Task> page = taskRepository.findByAssignedBy_UserId(assignedBy, pageable);
+                User currentUser = getCurrentUserRequired();
+                Page<Task> page;
+                if (isManager(currentUser)) {
+                        page = taskRepository.findByAssignedBy_UserIdAndIncident_Category_Department_DepartmentId(
+                                        assignedBy, getDepartmentIdRequired(currentUser), pageable);
+                } else if (isAdmin(currentUser)) {
+                        page = taskRepository.findByAssignedBy_UserId(assignedBy, pageable);
+                } else {
+                        throw new ForbiddenException("Only admins and managers can view tasks by assigner.");
+                }
                 return toPagedResponse(page);
         }
 
         @Override
         public PagedResponse<TaskResponseDto> getTaskByAssignedByMePaged(Pageable pageable) {
-                User currentUser = securityService.getCurrentUser()
-                                .orElseThrow(() -> new AuthenticationRequiredException("Authentication required"));
+                User currentUser = getCurrentUserRequired();
                 Page<Task> page = taskRepository.findByAssignedBy_UserId(currentUser.getUserId(), pageable);
                 return toPagedResponse(page);
         }
 
         @Override
         public PagedResponse<TaskResponseDto> getTaskByStatusPaged(TaskStatus status, Pageable pageable) {
-                Page<Task> page = taskRepository.findByStatus(status, pageable);
+                User currentUser = getCurrentUserRequired();
+                Page<Task> page;
+                if (isManager(currentUser)) {
+                        page = taskRepository.findByStatusAndIncident_Category_Department_DepartmentId(
+                                        status, getDepartmentIdRequired(currentUser), pageable);
+                } else if (isAdmin(currentUser)) {
+                        page = taskRepository.findByStatus(status, pageable);
+                } else {
+                        throw new ForbiddenException("Only admins and managers can view tasks by status.");
+                }
                 return toPagedResponse(page);
         }
 
@@ -348,9 +471,7 @@ public class TaskServiceImpl implements TaskService {
                                 .build();
         }
 
-        // Maps entity fields to response DTO shape used by API.
         private TaskResponseDto mapToResponse(Task task) {
-
                 return TaskResponseDto.builder()
                                 .taskId(task.getTaskId())
                                 .createdDate(task.getCreatedDate())

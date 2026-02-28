@@ -46,13 +46,10 @@ export default function TasksListPage() {
           // Employee sees only tasks assigned to them
           res = await tasksApi.listAssignedToMePaged(p);
         } else if (statusFilter) {
-          // Admin / Manager filtered by status
+          // Admin / Manager filtered by status (manager is department-scoped by backend)
           res = await tasksApi.listByStatusPaged(statusFilter, p);
-        } else if (isManager) {
-          // Manager: tasks they assigned
-          res = await tasksApi.listByMePaged(p);
         } else {
-          // Admin: all tasks
+          // Admin sees all tasks; Manager sees department tasks via backend scoping
           res = await tasksApi.listAllPaged(p);
         }
         setItems(res.content);
@@ -124,7 +121,7 @@ export default function TasksListPage() {
             {isEmployee
               ? "Tasks assigned to you"
               : isManager
-                ? "Tasks you have assigned"
+                ? "Tasks for incidents in your department"
                 : "All tasks in the system"}
           </p>
         </div>

@@ -24,7 +24,9 @@ public class IncidentResponseDTO {
 	private IncidentSeverity calculatedSeverity;
 	private Boolean isCritical;
 	private LocalDateTime reportedDate;
+	private LocalDateTime resolvedDate;
 	private String categoryName;
 	private String subCategory;
+	private String departmentName;
 	private Integer slaHours;
 }

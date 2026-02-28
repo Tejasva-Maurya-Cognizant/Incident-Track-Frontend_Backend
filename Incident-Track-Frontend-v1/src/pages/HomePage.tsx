@@ -44,6 +44,7 @@ const IconUsers = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h
 export default function HomePage() {
   const { user } = useAuth();
   const role = user?.role ?? "EMPLOYEE";
+  const isManager = role === "MANAGER";
   const isAdminOrManager = role === "ADMIN" || role === "MANAGER";
 
   const [incidents, setIncidents] = useState<IncidentResponseDTO[]>([]);
@@ -100,7 +101,7 @@ export default function HomePage() {
 
   const roleHints: Record<string, string> = {
     ADMIN: "You have full system access.",
-    MANAGER: "You can manage team incidents and assign tasks.",
+    MANAGER: "You can manage incidents and tasks for your department.",
     EMPLOYEE: "You can report incidents and track your tasks.",
   };
 
@@ -119,7 +120,7 @@ export default function HomePage() {
       {/* Incident stats */}
       <div>
         <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-          {isAdminOrManager ? "All Incidents" : "My Incidents"}
+          {isAdminOrManager ? (isManager ? "Department Incidents" : "All Incidents") : "My Incidents"}
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard label="Open" value={countOpen} accent="text-[#DC2626]" loading={loadingInc} />
@@ -132,7 +133,7 @@ export default function HomePage() {
       {/* Task stats */}
       <div>
         <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-          {isAdminOrManager ? "All Tasks" : "My Tasks"}
+          {isAdminOrManager ? (isManager ? "Department Tasks" : "All Tasks") : "My Tasks"}
         </div>
         <div className="grid grid-cols-3 gap-3">
           <StatCard label="Pending" value={countTaskPending} accent="text-[#D97706]" loading={loadingTask} />

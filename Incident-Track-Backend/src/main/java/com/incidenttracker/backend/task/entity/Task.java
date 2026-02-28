@@ -2,7 +2,6 @@ package com.incidenttracker.backend.task.entity;
 
 import java.time.LocalDateTime;
 
-import com.incidenttracker.backend.common.enums.IncidentStatus;
 import com.incidenttracker.backend.common.enums.TaskStatus;
 import com.incidenttracker.backend.incident.entity.Incident;
 import com.incidenttracker.backend.user.entity.User;
@@ -79,12 +78,13 @@ public class Task {
     @JoinColumn(name = "assigned_by", nullable = false)
     User assignedBy;
 
-    // Initializes default task state and pushes incident to IN_PROGRESS on creation.
+    // Initializes default task timestamps and workflow state.
     @PrePersist
     void onCreate() {
         createdDate = LocalDateTime.now();
-        status = TaskStatus.PENDING;
-        incident.setStatus(IncidentStatus.IN_PROGRESS);
+        if (status == null) {
+            status = TaskStatus.PENDING;
+        }
     }
 
 }

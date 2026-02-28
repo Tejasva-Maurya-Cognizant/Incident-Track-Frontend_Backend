@@ -1,75 +1,47 @@
-# React + TypeScript + Vite
+# Incident Track Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Incident and Task Workflow Changes
 
-Currently, two official plugins are available:
+### Backend changes
+- Managers can now access only the incidents that belong to their own department on all admin-manager incident endpoints.
+- Managers can now access only the tasks that belong to incidents in their own department on the shared task endpoints.
+- Task creation is now enforced as one incident to one task at the business-logic level.
+- A task can now be created only when the incident is `OPEN`.
+- A second task cannot be created for the same incident.
+- Managers can create tasks only for incidents in their own department.
+- Managers can assign tasks only to `EMPLOYEE` users in the same department.
+- Creating a task automatically moves the linked incident to `IN_PROGRESS`.
+- Creating a task automatically starts the task in `PENDING`.
+- A task for a closed incident cannot be created.
+- A task for an incident that is already `IN_PROGRESS` cannot be created again.
+- The assigned manager or assigned employee can move the task only through `PENDING -> IN_PROGRESS -> COMPLETED`.
+- `ADMIN` users are no longer part of the task status workflow.
+- Completing the single task automatically resolves the linked incident.
+- Closed incidents (`RESOLVED` or `CANCELLED`) can no longer be updated.
+- Incidents with an active task (`IN_PROGRESS`) must now be closed through task completion, not through the manual incident status endpoint.
+- Incident responses now include `departmentName`.
+- Incident responses now include `resolvedDate`.
+- Cancelling an incident now stores a close timestamp through `resolvedDate`.
+- The task status update endpoint response text was corrected from `Incident status updated` to `Task status updated`.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Frontend changes
+- Manager incident screens now reflect department-scoped access instead of global access.
+- Manager task screens now reflect department-scoped task access instead of personal-assignment-only wording.
+- The incidents list now labels manager scope as `Department Incidents`.
+- The home page now labels manager dashboard summaries as `Department Incidents` and `Department Tasks`.
+- The incidents list now shows a direct `Task` action for managers on `OPEN` incidents.
+- The incident detail page now shows a direct `Create Task` action for managers on `OPEN` incidents.
+- Manual incident status actions in the UI are now limited to closing an `OPEN` incident (`RESOLVED` or `CANCELLED`).
+- Incident status actions are hidden once the incident is already in progress or closed.
+- The task creation screen now shows only `OPEN` incidents.
+- The task creation screen now explains that task creation is limited to open incidents in the manager's department.
+- The task creation screen now shows a disabled state when no open incidents are available.
+- The task detail screen now shows only the next valid status transition:
+  `PENDING -> IN_PROGRESS`
+  `IN_PROGRESS -> COMPLETED`
+- The task detail screen hides the update controls once the task is already completed.
+- The task list page for managers now describes the list as tasks for incidents in the manager's department.
 
-## React Compiler
-
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Additional logic covered
+- A closed incident effectively freezes the task workflow as well, because task updates for closed incidents are now blocked on the backend.
+- The frontend prefilled incident flow (`/tasks/create?incidentId=...`) is now connected to incident actions so managers can assign a task directly from incident views.

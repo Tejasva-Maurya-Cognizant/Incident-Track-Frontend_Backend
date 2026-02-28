@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import StatusBadge from "../../components/common/StatusBadge";
 import PriorityBadge from "../../components/common/PriorityBadge";
 
-const ALL_STATUSES: IncidentStatus[] = ["OPEN", "IN_PROGRESS", "RESOLVED", "CANCELLED"];
+const MANUAL_CLOSE_STATUSES: IncidentStatus[] = ["RESOLVED", "CANCELLED"];
 
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -32,6 +32,7 @@ export default function IncidentDetailPage() {
   const canSeeAll = role === "ADMIN" || role === "MANAGER";
   const canUpdateStatus = role === "ADMIN" || role === "MANAGER";
   const canWithdraw = role === "EMPLOYEE";
+  const canCreateTask = role === "MANAGER";
 
   const [data, setData] = useState<IncidentResponseDTO | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,7 +54,7 @@ export default function IncidentDetailPage() {
         ? await incidentsApi.getByIdAdminManager(incidentId)
         : await incidentsApi.getByIdMine(incidentId);
       setData(res);
-      setNewStatus(res.status);
+      setNewStatus(res.status === "OPEN" ? "RESOLVED" : res.status);
     } catch (e: any) {
       setErr(e?.response?.data?.message ?? "Failed to load incident");
     } finally {
@@ -116,6 +117,8 @@ export default function IncidentDetailPage() {
 
   if (!data) return null;
 
+  const canManuallyClose = canUpdateStatus && data.status === "OPEN";
+
   return (
     <div className="page-panel space-y-3">
       {/* Breadcrumb */}
@@ -134,6 +137,15 @@ export default function IncidentDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {canCreateTask && data.status === "OPEN" && (
+            <Link
+              to={`/tasks/create?incidentId=${data.incidentId}`}
+              className="inline-flex items-center gap-1 h-8 px-3.5 rounded-[8px] border text-xs font-medium text-slate-700 hover:bg-[#FAFCFF] transition-colors"
+              style={{ borderColor: "var(--border)" }}
+            >
+              Create Task
+            </Link>
+          )}
           {canWithdraw && data.status !== "CANCELLED" && data.status !== "RESOLVED" && (
             <button
               onClick={onWithdraw}
@@ -185,11 +197,11 @@ export default function IncidentDetailPage() {
         )}
 
         {/* Inline status update for admin/manager */}
-        {canUpdateStatus && (
+        {canManuallyClose && (
           <div className="mt-3 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
-            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Update Status</div>
+            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Close Incident</div>
             <div className="flex flex-wrap items-center gap-1.5">
-              {ALL_STATUSES.map((s) => (
+              {MANUAL_CLOSE_STATUSES.map((s) => (
                 <button
                   key={s}
                   onClick={() => { setNewStatus(s); setUpdateOk(false); setUpdateErr(null); }}
@@ -204,7 +216,7 @@ export default function IncidentDetailPage() {
               <button
                 className="btn-primary h-7 text-xs px-3 ml-auto"
                 onClick={onUpdateStatus}
-                disabled={updating || data.status === newStatus}
+                disabled={updating}
               >
                 {updating ? "Updating" : "Apply"}
               </button>

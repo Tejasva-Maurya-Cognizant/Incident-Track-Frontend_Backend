@@ -13,9 +13,12 @@ const DEFAULT_PARAMS: PageParams = { page: 0, size: 10, sortBy: "reportedDate", 
 export default function IncidentsListPage() {
   const { user } = useAuth();
   const role = user?.role ?? "EMPLOYEE";
+  const isManager = role === "MANAGER";
 
   const canSeeAll = role === "ADMIN" || role === "MANAGER";
   const canUpdateStatus = role === "ADMIN" || role === "MANAGER";
+  const canCreateTask = isManager;
+  const allScopeLabel = isManager ? "Department Incidents" : "All Incidents";
 
   const [scope, setScope] = useState<"MINE" | "ALL">(canSeeAll ? "ALL" : "MINE");
   const [status, setStatus] = useState<IncidentStatus | "">("");
@@ -135,7 +138,7 @@ export default function IncidentsListPage() {
       <div className="card p-2 flex items-center gap-2 flex-nowrap shrink-0">
         {canSeeAll && (
           <select className="input h-8 text-xs bg-white flex-1 min-w-0" value={scope} onChange={(e) => { setScope(e.target.value as any); resetToFirstPage(); }}>
-            <option value="ALL">All Incidents</option>
+            <option value="ALL">{allScopeLabel}</option>
             <option value="MINE">My Incidents</option>
           </select>
         )}
@@ -233,7 +236,16 @@ export default function IncidentsListPage() {
                         >
                           View
                         </a>
-                        {canUpdateStatus && (
+                        {canCreateTask && it.status === "OPEN" && (
+                          <a
+                            href={`/tasks/create?incidentId=${it.incidentId}`}
+                            className="h-7 px-2 rounded-[6px] bg-white border text-xs font-medium hover:bg-[#FAFCFF] inline-flex items-center"
+                            style={{ borderColor: "var(--border)" }}
+                          >
+                            Task
+                          </a>
+                        )}
+                        {canUpdateStatus && it.status === "OPEN" && (
                           <a
                             href={`/incidents/${it.incidentId}?mode=status`}
                             className="h-7 px-2 rounded-[6px] bg-white border text-xs font-medium hover:bg-[#FAFCFF] inline-flex items-center"

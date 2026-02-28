@@ -56,6 +56,8 @@ public class Incident {
     @Column(nullable = false, updatable = false)
     private LocalDateTime reportedDate;
 
+    private LocalDateTime resolvedDate;
+
     @Enumerated(EnumType.STRING)
     private IncidentStatus status;
 

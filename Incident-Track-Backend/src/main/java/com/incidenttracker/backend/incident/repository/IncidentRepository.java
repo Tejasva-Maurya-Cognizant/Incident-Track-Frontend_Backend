@@ -24,6 +24,10 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
 
         Optional<Incident> findByIncidentIdAndReportedBy_UserId(Long incidentId, Long UserId);
 
+        Optional<Incident> findByIncidentIdAndCategory_Department_DepartmentId(Long incidentId, Long departmentId);
+
+        List<Incident> findByCategory_Department_DepartmentId(Long departmentId);
+
         // -------------- Pageable versions ---------------------------------------
         Page<Incident> findByReportedBy_UserId(Long userId, Pageable pageable);
 
@@ -36,7 +40,12 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
 
         Page<Incident> findAll(Pageable pageable);
 
+        Page<Incident> findByCategory_Department_DepartmentId(Long departmentId, Pageable pageable);
+
         Page<Incident> findByStatus(IncidentStatus status, Pageable pageable);
+
+        Page<Incident> findByStatusAndCategory_Department_DepartmentId(
+                        IncidentStatus status, Long departmentId, Pageable pageable);
 
         // -------------- for audit and compliance -------------------------------------
 
