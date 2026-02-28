@@ -360,23 +360,23 @@ public class NotificationService {
 		}
 	}
 
-	// CRITICAL or CANCELLED: Notify managers of the incident's department.
-	public void notifyManagersCriticalOrCancelled(Incident incident) {
+	// URGENT or CANCELLED: Notify managers of the incident's department.
+	public void notifyManagersUrgentOrCancelled(Incident incident) {
 		if (incident == null || incident.getCategory() == null || incident.getCategory().getDepartment() == null) {
 			log.warn("Cannot notify managers: incident/category/department is missing");
 			return;
 		}
 
-		boolean isCritical = Boolean.TRUE.equals(incident.getIsCritical());
+		boolean isUrgent = Boolean.TRUE.equals(incident.getUrgent());
 		boolean isCancelled = incident.getStatus() == IncidentStatus.CANCELLED;
 
-		if (!isCritical && !isCancelled) {
+		if (!isUrgent && !isCancelled) {
 			return;
 		}
 
 		Long departmentId = incident.getCategory().getDepartment().getDepartmentId();
-		if (isCritical) {
-			String message = "Critical incident reported: #" + incident.getIncidentId();
+		if (isUrgent) {
+			String message = "Urgent incident reported: #" + incident.getIncidentId();
 			notifyAllManagersByDepartment(departmentId, NotificationType.CRITICAL_INCIDENT_ALERT, message);
 		}
 

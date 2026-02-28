@@ -65,9 +65,12 @@ public class IncidentServiceImpl implements IncidentService {
 				.orElseThrow(() -> new RuntimeException("Incident not found"));
 	}
 
-	private IncidentSeverity calculateSeverity(Boolean isCritical, int slaHours) {
-		if (Boolean.TRUE.equals(isCritical)) {
+	private IncidentSeverity calculateSeverity(Boolean urgent, Integer slaHours) {
+		if (Boolean.TRUE.equals(urgent)) {
 			return IncidentSeverity.CRITICAL;
+		}
+		if (slaHours == null) {
+			return IncidentSeverity.LOW;
 		}
 		if (slaHours <= 2) {
 			return IncidentSeverity.CRITICAL;
@@ -79,6 +82,20 @@ public class IncidentServiceImpl implements IncidentService {
 			return IncidentSeverity.LOW;
 		}
 
+	}
+
+	private LocalDateTime calculateSlaDueAt(Category category, LocalDateTime reportedAt, Boolean urgent) {
+		if (category == null || category.getSlaTimeHours() == null) {
+			return null;
+		}
+
+		long baseMinutes = category.getSlaTimeHours() * 60L;
+		if (baseMinutes <= 0) {
+			return reportedAt;
+		}
+
+		long effectiveMinutes = Boolean.TRUE.equals(urgent) ? Math.max(1L, baseMinutes / 2L) : baseMinutes;
+		return reportedAt.plusMinutes(effectiveMinutes);
 	}
 
 	@Override
@@ -94,8 +111,11 @@ public class IncidentServiceImpl implements IncidentService {
 		incident.setDescription(dto.getDescription());
 		incident.setReportedBy(currentUser);
 		incident.setCategory(category);
-		incident.setIsCritical(dto.getIsCritical());
-		IncidentSeverity severity = calculateSeverity(dto.getIsCritical(), category.getSlaTimeHours());
+		incident.setUrgent(Boolean.TRUE.equals(dto.getUrgent()));
+		LocalDateTime reportedAt = LocalDateTime.now();
+		incident.setReportedDate(reportedAt);
+		incident.setSlaDueAt(calculateSlaDueAt(category, reportedAt, incident.getUrgent()));
+		IncidentSeverity severity = calculateSeverity(incident.getUrgent(), category.getSlaTimeHours());
 		incident.setCalculatedSeverity(severity);
 
 		Incident saved = incidentRepository.save(incident);
@@ -103,7 +123,7 @@ public class IncidentServiceImpl implements IncidentService {
 		auditService.log(saved, currentUser, ActionType.INCIDENT_CREATED, "Incident created with incident Id :- "
 				+ saved.getIncidentId() + "of category :- " + saved.getCategory().getCategoryName());
 		notificationService.notifyAllManager(saved);
-		notificationService.notifyManagersCriticalOrCancelled(saved);
+		notificationService.notifyManagersUrgentOrCancelled(saved);
 		return mapToResponseDTO(saved);
 	}
 
@@ -139,10 +159,10 @@ public class IncidentServiceImpl implements IncidentService {
 	}
 
 	@Override
-	public List<IncidentResponseDTO> getIncidentsByUserAndUserMarkedCritical(Boolean isCritical) {
+	public List<IncidentResponseDTO> getIncidentsByUserAndUrgent(Boolean urgent) {
 		User currentUser = getCurrentUserRequired();
 
-		return incidentRepository.findByReportedBy_UserIdAndIsCritical(currentUser.getUserId(), isCritical)
+		return incidentRepository.findByReportedBy_UserIdAndUrgent(currentUser.getUserId(), urgent)
 				.stream()
 				.map(this::mapToResponseDTO)
 				.toList();
@@ -186,7 +206,7 @@ public class IncidentServiceImpl implements IncidentService {
 		incident.setResolvedDate(LocalDateTime.now());
 		Incident saved = incidentRepository.save(incident);
 
-		notificationService.notifyManagersCriticalOrCancelled(incident);
+		notificationService.notifyManagersUrgentOrCancelled(incident);
 
 		// ✅ Auto-close breach when cancelled
 		if (saved.getStatus() == IncidentStatus.CANCELLED) {
@@ -240,11 +260,11 @@ public class IncidentServiceImpl implements IncidentService {
 	}
 
 	@Override
-	public PagedResponse<IncidentResponseDTO> getIncidentsByUserAndUserMarkedCriticalPaged(
-			Boolean userMarkedCritical, Pageable pageable) {
+	public PagedResponse<IncidentResponseDTO> getIncidentsByUserAndUrgentPaged(
+			Boolean urgent, Pageable pageable) {
 		User currentUser = getCurrentUserRequired();
-		Page<Incident> page = incidentRepository.findByReportedBy_UserIdAndIsCritical(
-				currentUser.getUserId(), userMarkedCritical, pageable);
+		Page<Incident> page = incidentRepository.findByReportedBy_UserIdAndUrgent(
+				currentUser.getUserId(), urgent, pageable);
 		return toPagedResponse(page);
 	}
 
@@ -345,7 +365,8 @@ public class IncidentServiceImpl implements IncidentService {
 		dto.setCalculatedSeverity(incident.getCalculatedSeverity());
 		dto.setReportedDate(incident.getReportedDate());
 		dto.setResolvedDate(incident.getResolvedDate());
-		dto.setIsCritical(incident.getIsCritical());
+		dto.setUrgent(incident.getUrgent());
+		dto.setSlaDueAt(incident.getSlaDueAt());
 		dto.setUserId(incident.getReportedBy().getUserId());
 		dto.setUsername(incident.getReportedBy().getUsername());
 		dto.setCategoryId(incident.getCategory().getCategoryId());

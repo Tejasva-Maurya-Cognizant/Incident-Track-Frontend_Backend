@@ -4,7 +4,7 @@ export type IncidentSeverity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
 export interface IncidentRequestDTO {
   categoryId: number;
   description: string;
-  isCritical?: boolean;
+  urgent?: boolean;
 }
 
 export interface IncidentResponseDTO {
@@ -20,10 +20,11 @@ export interface IncidentResponseDTO {
 
   status: IncidentStatus;
   calculatedSeverity: IncidentSeverity;
-  isCritical: boolean;
+  urgent: boolean;
 
   reportedDate: string; // LocalDateTime as ISO string
   resolvedDate?: string | null;
+  slaDueAt?: string | null;
   slaHours?: number | null;
 }
 

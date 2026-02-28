@@ -20,7 +20,7 @@ public interface IncidentService {
 
 	List<IncidentResponseDTO> getIncidentsByUserAndCalculatedSeverity(IncidentSeverity calculatedSeverity);
 
-	List<IncidentResponseDTO> getIncidentsByUserAndUserMarkedCritical(Boolean userMarkedCritical);
+	List<IncidentResponseDTO> getIncidentsByUserAndUrgent(Boolean urgent);
 
 	List<IncidentResponseDTO> getAllIncidents();
 
@@ -40,7 +40,7 @@ public interface IncidentService {
 	PagedResponse<IncidentResponseDTO> getIncidentsByUserAndCalculatedSeverityPaged(IncidentSeverity calculatedSeverity,
 			Pageable pageable);
 
-	PagedResponse<IncidentResponseDTO> getIncidentsByUserAndUserMarkedCriticalPaged(Boolean userMarkedCritical,
+	PagedResponse<IncidentResponseDTO> getIncidentsByUserAndUrgentPaged(Boolean urgent,
 			Pageable pageable);
 
 	PagedResponse<IncidentResponseDTO> getAllIncidentsPaged(Pageable pageable);

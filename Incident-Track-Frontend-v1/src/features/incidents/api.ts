@@ -79,13 +79,13 @@ export const incidentsApi = {
     return res.data;
   },
 
-  listCritical: async () => {
-    const res = await api.get<IncidentResponseDTO[]>(`${BASE}/CRITICAL`);
+  listUrgent: async () => {
+    const res = await api.get<IncidentResponseDTO[]>(`${BASE}/urgent`);
     return res.data;
   },
 
-  listCriticalPaged: async (p: PageParams) => {
-    const res = await api.get<PagedResponse<IncidentResponseDTO>>(`${BASE}/CRITICAL/paged`, {
+  listUrgentPaged: async (p: PageParams) => {
+    const res = await api.get<PagedResponse<IncidentResponseDTO>>(`${BASE}/urgent/paged`, {
       params: { page: p.page, size: p.size, sortBy: p.sortBy, sortDir: p.sortDir },
     });
     return res.data;

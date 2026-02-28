@@ -20,7 +20,7 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
 
         List<Incident> findByReportedBy_UserIdAndCalculatedSeverity(Long UserId, IncidentSeverity severity);
 
-        List<Incident> findByReportedBy_UserIdAndIsCritical(Long UserId, Boolean isCritical);
+        List<Incident> findByReportedBy_UserIdAndUrgent(Long UserId, Boolean urgent);
 
         Optional<Incident> findByIncidentIdAndReportedBy_UserId(Long incidentId, Long UserId);
 
@@ -36,7 +36,7 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
         Page<Incident> findByReportedBy_UserIdAndCalculatedSeverity(Long userId, IncidentSeverity severity,
                         Pageable pageable);
 
-        Page<Incident> findByReportedBy_UserIdAndIsCritical(Long userId, Boolean isCritical, Pageable pageable);
+        Page<Incident> findByReportedBy_UserIdAndUrgent(Long userId, Boolean urgent, Pageable pageable);
 
         Page<Incident> findAll(Pageable pageable);
 

@@ -1,5 +1,7 @@
 package com.incidenttracker.backend.incident.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,6 +17,7 @@ public class IncidentRequestDTO {
 
 	private String description;
 
-	// user manually marks critical if urgency is high
-	private Boolean isCritical;
+	// User can mark the incident as urgent; legacy "isCritical" is still accepted.
+	@JsonAlias("isCritical")
+	private Boolean urgent;
 }

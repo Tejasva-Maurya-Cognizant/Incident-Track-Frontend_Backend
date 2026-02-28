@@ -130,21 +130,21 @@ public class IncidentController {
         }
 
         @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
-        @GetMapping("/CRITICAL")
-        public ResponseEntity<List<IncidentResponseDTO>> getIncidentsByIsCritical() {
+        @GetMapping({ "/urgent", "/CRITICAL" })
+        public ResponseEntity<List<IncidentResponseDTO>> getIncidentsByUrgent() {
                 List<IncidentResponseDTO> incidents = incidentService
-                                .getIncidentsByUserAndUserMarkedCritical(Boolean.TRUE);
+                                .getIncidentsByUserAndUrgent(Boolean.TRUE);
                 return ResponseEntity
                                 .ok()
                                 .body(incidents);
         }
 
         /**
-         * GET /api/incidents/CRITICAL/paged
+         * GET /api/incidents/urgent/paged
          */
         @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
-        @GetMapping("/CRITICAL/paged")
-        public ResponseEntity<PagedResponse<IncidentResponseDTO>> getIncidentsByCriticalPaged(
+        @GetMapping({ "/urgent/paged", "/CRITICAL/paged" })
+        public ResponseEntity<PagedResponse<IncidentResponseDTO>> getIncidentsByUrgentPaged(
                         @RequestParam(defaultValue = "0") int page,
                         @RequestParam(defaultValue = "20") int size,
                         @RequestParam(defaultValue = "reportedDate") String sortBy,
@@ -153,7 +153,7 @@ public class IncidentController {
                                 : Sort.by(sortBy).descending();
                 Pageable pageable = PageRequest.of(page, size, sort);
                 return ResponseEntity.ok(
-                                incidentService.getIncidentsByUserAndUserMarkedCriticalPaged(Boolean.TRUE, pageable));
+                                incidentService.getIncidentsByUserAndUrgentPaged(Boolean.TRUE, pageable));
         }
 
         @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")

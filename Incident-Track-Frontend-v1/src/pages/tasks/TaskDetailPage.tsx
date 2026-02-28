@@ -50,6 +50,7 @@ export default function TaskDetailPage() {
     const [updating, setUpdating] = useState(false);
     const [updateErr, setUpdateErr] = useState<string | null>(null);
     const [updateOk, setUpdateOk] = useState(false);
+    const [updatedToStatus, setUpdatedToStatus] = useState<TaskStatus | null>(null);
 
     const loadUserInfo = async (assignedTo: number, assignedBy: number) => {
         const ids = [...new Set([assignedTo, assignedBy])];
@@ -97,11 +98,14 @@ export default function TaskDetailPage() {
     }, [taskId]);
 
     const onUpdateStatus = async () => {
+        const submittedStatus = newStatus;
         setUpdateErr(null);
         setUpdateOk(false);
+        setUpdatedToStatus(null);
         setUpdating(true);
         try {
-            await tasksApi.updateStatus(taskId, { status: newStatus });
+            await tasksApi.updateStatus(taskId, { status: submittedStatus });
+            setUpdatedToStatus(submittedStatus);
             setUpdateOk(true);
             await load();
         } catch (e: any) {
@@ -139,6 +143,7 @@ export default function TaskDetailPage() {
             : data.status === "IN_PROGRESS"
                 ? ["COMPLETED"]
                 : [];
+    const showUpdateSection = canUpdateStatus && (allowedStatuses.length > 0 || updateErr !== null || updateOk);
 
     return (
         <div className="page-panel space-y-3">
@@ -194,38 +199,47 @@ export default function TaskDetailPage() {
                 </div>
 
                 {/* Update status — inline, no second card */}
-                {canUpdateStatus && allowedStatuses.length > 0 && (
+                {showUpdateSection && (
                     <div className="mt-3 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
-                        <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Update Status</div>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                            {allowedStatuses.map((s) => (
-                                <button
-                                    key={s}
-                                    onClick={() => { setNewStatus(s); setUpdateOk(false); setUpdateErr(null); }}
-                                    className={`h-7 px-3 rounded-[8px] text-xs font-medium border transition-colors ${newStatus === s
-                                        ? "bg-[#175FFA] text-white border-[#175FFA]"
-                                        : "border-[var(--border)] text-slate-600 hover:bg-[#FAFCFF]"
-                                        }`}
-                                >
-                                    {s === "IN_PROGRESS" ? "In Progress" : s.charAt(0) + s.slice(1).toLowerCase()}
-                                </button>
-                            ))}
-                            <button
-                                className="btn-primary h-7 text-xs px-3 ml-auto"
-                                onClick={onUpdateStatus}
-                                disabled={updating}
-                            >
-                                {updating ? "Updating…" : "Apply"}
-                            </button>
-                        </div>
+                        {allowedStatuses.length > 0 && (
+                            <>
+                                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Update Status</div>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                    {allowedStatuses.map((s) => (
+                                        <button
+                                            key={s}
+                                            onClick={() => {
+                                                setNewStatus(s);
+                                                setUpdateOk(false);
+                                                setUpdateErr(null);
+                                                setUpdatedToStatus(null);
+                                            }}
+                                            className={`h-7 px-3 rounded-[8px] text-xs font-medium border transition-colors ${newStatus === s
+                                                ? "bg-[#175FFA] text-white border-[#175FFA]"
+                                                : "border-[var(--border)] text-slate-600 hover:bg-[#FAFCFF]"
+                                                }`}
+                                        >
+                                            {s === "IN_PROGRESS" ? "In Progress" : s.charAt(0) + s.slice(1).toLowerCase()}
+                                        </button>
+                                    ))}
+                                    <button
+                                        className="btn-primary h-7 text-xs px-3 ml-auto"
+                                        onClick={onUpdateStatus}
+                                        disabled={updating}
+                                    >
+                                        {updating ? "Updating…" : "Apply"}
+                                    </button>
+                                </div>
+                            </>
+                        )}
                         {updateErr && (
                             <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-[8px] px-3 py-1.5 mt-2">
                                 {updateErr}
                             </div>
                         )}
-                        {updateOk && (
+                        {updateOk && updatedToStatus && (
                             <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-[8px] px-3 py-1.5 mt-2">
-                                Status updated to {newStatus}.
+                                Status updated to {updatedToStatus}.
                             </div>
                         )}
                     </div>

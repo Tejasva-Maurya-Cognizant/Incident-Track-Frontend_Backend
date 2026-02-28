@@ -4,13 +4,26 @@ import { incidentsApi } from "../../features/incidents/api";
 import { categoriesApi } from "../../features/categories/api";
 import type { CategoryResponseDto } from "../../features/categories/types";
 
+function formatSlaWindow(hours?: number | null, urgent = false) {
+  if (hours == null) return "-";
+
+  const baseMinutes = hours * 60;
+  const effectiveMinutes = urgent ? Math.max(1, Math.floor(baseMinutes / 2)) : baseMinutes;
+  const wholeHours = Math.floor(effectiveMinutes / 60);
+  const remainingMinutes = effectiveMinutes % 60;
+
+  if (wholeHours === 0) return `${remainingMinutes}m`;
+  if (remainingMinutes === 0) return `${wholeHours}h`;
+  return `${wholeHours}h ${remainingMinutes}m`;
+}
+
 export default function IncidentCreatePage() {
   const [categories, setCategories] = useState<CategoryResponseDto[]>([]);
   const [parentCategory, setParentCategory] = useState<string>("");
   const [categoryId, setCategoryId] = useState<number | null>(null);
 
   const [description, setDescription] = useState("");
-  const [isCritical, setIsCritical] = useState(false);
+  const [urgent, setUrgent] = useState(false);
 
   const [loadingCats, setLoadingCats] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -32,28 +45,28 @@ export default function IncidentCreatePage() {
     loadCats();
   }, []);
 
-  // Distinct parent category names
   const parentNames = useMemo(() => {
     const seen = new Set<string>();
     return categories
       .map((c) => c.categoryName)
-      .filter((n) => { if (seen.has(n)) return false; seen.add(n); return true; });
+      .filter((n) => {
+        if (seen.has(n)) return false;
+        seen.add(n);
+        return true;
+      });
   }, [categories]);
 
-  // Sub-categories for the selected parent
   const subCategories = useMemo(() => {
     if (!parentCategory) return [];
     return categories.filter((c) => c.categoryName === parentCategory);
   }, [categories, parentCategory]);
 
-  // When parent changes, reset child selection
   const handleParentChange = (name: string) => {
     setParentCategory(name);
     setCategoryId(null);
     setErr(null);
   };
 
-  // When sub-category chosen, set categoryId
   const handleSubCategoryChange = (id: number) => {
     setCategoryId(id);
     setErr(null);
@@ -61,7 +74,7 @@ export default function IncidentCreatePage() {
 
   const selected = useMemo(
     () => categories.find((c) => c.categoryId === categoryId) ?? null,
-    [categories, categoryId]
+    [categories, categoryId],
   );
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -77,7 +90,7 @@ export default function IncidentCreatePage() {
       const created = await incidentsApi.create({
         categoryId,
         description: description.trim(),
-        isCritical,
+        urgent,
       });
       window.location.href = `/incidents/${created.incidentId}`;
     } catch (error: any) {
@@ -89,7 +102,6 @@ export default function IncidentCreatePage() {
 
   return (
     <div className="page-panel space-y-3">
-      {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-xs text-slate-500">
         <Link to="/incidents" className="hover:text-[#175FFA] transition-colors">Incidents</Link>
         <span>/</span>
@@ -102,23 +114,20 @@ export default function IncidentCreatePage() {
       </div>
 
       <form onSubmit={onSubmit} className="card p-4 space-y-4">
-
-        {/* Category + Sub-category side-by-side, always reserve both columns */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Parent category */}
           <div>
             <label className="text-xs font-medium text-slate-700">
               Category <span className="text-red-500">*</span>
             </label>
             {loadingCats ? (
-              <div className="input mt-1 flex items-center text-slate-400 text-xs">Loading…</div>
+              <div className="input mt-1 flex items-center text-slate-400 text-xs">Loading...</div>
             ) : (
               <select
                 className="input mt-1 bg-white text-xs"
                 value={parentCategory}
                 onChange={(e) => handleParentChange(e.target.value)}
               >
-                <option value="">— Select category —</option>
+                <option value="">- Select category -</option>
                 {parentNames.map((name) => (
                   <option key={name} value={name}>{name}</option>
                 ))}
@@ -126,14 +135,13 @@ export default function IncidentCreatePage() {
             )}
           </div>
 
-          {/* Sub-category — always rendered, disabled when no parent */}
           <div>
             <label className="text-xs font-medium text-slate-700">
               Sub-Category <span className="text-red-500">*</span>
             </label>
             {!parentCategory ? (
               <select className="input mt-1 bg-white text-xs" disabled>
-                <option>— Select category first —</option>
+                <option>- Select category first -</option>
               </select>
             ) : subCategories.length === 0 ? (
               <select className="input mt-1 bg-white text-xs" disabled>
@@ -145,7 +153,7 @@ export default function IncidentCreatePage() {
                 value={categoryId ?? ""}
                 onChange={(e) => handleSubCategoryChange(Number(e.target.value))}
               >
-                <option value="">— Select sub-category —</option>
+                <option value="">- Select sub-category -</option>
                 {subCategories.map((c) => (
                   <option key={c.categoryId} value={c.categoryId}>
                     {c.subCategory ?? c.categoryName}
@@ -156,20 +164,19 @@ export default function IncidentCreatePage() {
           </div>
         </div>
 
-        {/* Info card for selected category */}
         {selected && (
           <div
             className="rounded-[8px] border bg-[#F8FAFD] px-3 py-2 text-xs"
             style={{ borderColor: "var(--border)" }}
           >
             <span className="font-medium text-slate-800">{selected.categoryName}</span>
-            {selected.subCategory && <span className="text-slate-500"> — {selected.subCategory}</span>}
-            <span className="text-slate-400 ml-3">Dept: <span className="font-medium text-slate-600">{selected.departmentName ?? "—"}</span></span>
-            <span className="text-slate-400 ml-3">SLA: <span className="font-medium text-slate-600">{selected.slaTimeHours ?? "—"}h</span></span>
+            {selected.subCategory && <span className="text-slate-500"> - {selected.subCategory}</span>}
+            <span className="text-slate-400 ml-3">Dept: <span className="font-medium text-slate-600">{selected.departmentName ?? "-"}</span></span>
+            <span className="text-slate-400 ml-3">Base SLA: <span className="font-medium text-slate-600">{selected.slaTimeHours ?? "-"}h</span></span>
+            <span className="text-slate-400 ml-3">Effective Window: <span className="font-medium text-slate-600">{formatSlaWindow(selected.slaTimeHours, urgent)}</span></span>
           </div>
         )}
 
-        {/* Description */}
         <div>
           <label className="text-xs font-medium text-slate-700">
             Description <span className="text-red-500">*</span>
@@ -178,13 +185,13 @@ export default function IncidentCreatePage() {
             className="input mt-1 h-20 resize-none py-2 text-xs"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe the issue clearly…"
+            placeholder="Describe the issue clearly..."
           />
         </div>
 
         <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
-          <input type="checkbox" checked={isCritical} onChange={(e) => setIsCritical(e.target.checked)} />
-          Mark as Critical (if urgency is high)
+          <input type="checkbox" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} />
+          Mark as Urgent (halves the SLA window)
         </label>
 
         {err && (
@@ -198,7 +205,7 @@ export default function IncidentCreatePage() {
 
         <div className="flex items-center gap-2 pt-1">
           <button className="btn-primary h-8 text-xs px-4" disabled={loading || loadingCats}>
-            {loading ? "Creating…" : "Create Incident"}
+            {loading ? "Creating..." : "Create Incident"}
           </button>
           <Link
             to="/incidents"
@@ -211,5 +218,4 @@ export default function IncidentCreatePage() {
       </form>
     </div>
   );
-
 }

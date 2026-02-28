@@ -16,6 +16,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -64,8 +65,8 @@ public class Task {
     private LocalDateTime completedDate;
 
     // Incident this task belongs to.
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) // Foreign Key
-    @JoinColumn(name = "incident_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "incident_id", nullable = false, unique = true)
     Incident incident;
 
     // Employee/user the task is assigned to.

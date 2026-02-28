@@ -4,7 +4,7 @@ import type { NotificationType } from "../../features/notifications/types";
 
 const TYPE_LABELS: Record<NotificationType, string> = {
   INCIDENT_REPORTED: "Incident Reported",
-  CRITICAL_INCIDENT_ALERT: "Critical Alert",
+  CRITICAL_INCIDENT_ALERT: "Urgent Alert",
   INCIDENT_WITHDRAWN: "Incident Withdrawn",
   TASK_ASSIGNED: "Task Assigned",
   INCIDENT_RESOLVED: "Incident Resolved",

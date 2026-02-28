@@ -182,9 +182,10 @@ export default function IncidentDetailPage() {
           <InfoRow label="Category">{data.categoryName}</InfoRow>
           <InfoRow label="Sub-Category">{data.subCategory ?? "—"}</InfoRow>
           <InfoRow label="Department">{data.departmentName ?? "—"}</InfoRow>
-          <InfoRow label="SLA Hours">{data.slaHours != null ? `${data.slaHours}h` : "—"}</InfoRow>
+          <InfoRow label="Base SLA">{data.slaHours != null ? `${data.slaHours}h` : "—"}</InfoRow>
+          <InfoRow label="SLA Due At">{fmtDate(data.slaDueAt)}</InfoRow>
           <InfoRow label="Reported By">{data.username ?? "—"}</InfoRow>
-          <InfoRow label="Critical">{data.isCritical ? "Yes" : "No"}</InfoRow>
+          <InfoRow label="Urgent">{data.urgent ? "Yes" : "No"}</InfoRow>
           <InfoRow label="Reported At">{fmtDate(data.reportedDate)}</InfoRow>
           {data.resolvedDate && <InfoRow label="Resolved At">{fmtDate(data.resolvedDate)}</InfoRow>}
         </div>

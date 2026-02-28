@@ -22,9 +22,10 @@ public class IncidentResponseDTO {
 	private String username;
 	private IncidentStatus status;
 	private IncidentSeverity calculatedSeverity;
-	private Boolean isCritical;
+	private Boolean urgent;
 	private LocalDateTime reportedDate;
 	private LocalDateTime resolvedDate;
+	private LocalDateTime slaDueAt;
 	private String categoryName;
 	private String subCategory;
 	private String departmentName;

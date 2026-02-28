@@ -16,10 +16,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     Optional<Task> findByTaskIdAndIncident_Category_Department_DepartmentId(Long taskId, Long departmentId);
 
-    // Returns tasks for a specific incident id.
-    List<Task> findByIncident_IncidentId(Long incidentId);
+    // Returns the task linked to a specific incident id.
+    Optional<Task> findByIncident_IncidentId(Long incidentId);
 
-    List<Task> findByIncident_IncidentIdAndIncident_Category_Department_DepartmentId(Long incidentId, Long departmentId);
+    Optional<Task> findByIncident_IncidentIdAndIncident_Category_Department_DepartmentId(Long incidentId, Long departmentId);
 
     List<Task> findByIncident_Category_Department_DepartmentId(Long departmentId);
 

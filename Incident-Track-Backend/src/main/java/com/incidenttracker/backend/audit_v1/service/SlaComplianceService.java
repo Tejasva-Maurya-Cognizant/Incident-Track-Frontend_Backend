@@ -39,7 +39,8 @@ public class SlaComplianceService {
 
         for (Incident incident : overdue) {
 
-            // safety: if breach already exists, skip
+            // Safety: if breach already exists, skip. The scheduler reads the already
+            // calculated effective SLA deadline from incident.slaDueAt.
             if (breachRepository.existsByIncident_IncidentId(incident.getIncidentId())) {
                 incident.setSlaBreached(true);
                 continue;
@@ -54,7 +55,7 @@ public class SlaComplianceService {
                     .breachedAt(now)
                     .breachMinutes(minutesLate)
                     .breachStatus(BreachStatus.OPEN)
-                    .reason("Incident not resolved within SLA time")
+                    .reason("Incident not resolved within the effective SLA deadline")
                     .build();
 
             breachRepository.save(breach);
@@ -65,7 +66,7 @@ public class SlaComplianceService {
 
             // audit log entry for breach
             auditService.log(incident, null, ActionType.INCIDENT_UPDATED,
-                    "SLA BREACH detected. DueAt=" + due + ", breachedAt=" + now + ", lateMinutes=" + minutesLate);
+                    "SLA BREACH detected. DueAt= " + due + ", breachedAt=" + now + ", lateMinutes= " + minutesLate);
         }
     }
 }

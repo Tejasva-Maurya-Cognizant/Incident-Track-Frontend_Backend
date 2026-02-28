@@ -34,14 +34,23 @@ export default function TaskCreatePage() {
             setLoadingData(true);
             try {
                 // Manager gets employees in their department; Admin gets all
-                const [empList, incList] = await Promise.allSettled([
+                const [empList, incList, taskPage] = await Promise.allSettled([
                     authApi.getEmployeesByDepartment(),
                     incidentsApi.listAllAdminManager(),
+                    tasksApi.listAllPaged({ page: 0, size: 1000, sortBy: "createdDate", sortDir: "desc" }),
                 ]);
 
                 if (empList.status === "fulfilled") setEmployees(empList.value);
                 if (incList.status === "fulfilled") {
-                    setIncidents(incList.value.filter((incident) => incident.status === "OPEN"));
+                    const incidentIdsWithTasks = taskPage.status === "fulfilled"
+                        ? new Set(taskPage.value.content.map((task) => task.incidentId))
+                        : new Set<number>();
+
+                    setIncidents(
+                        incList.value.filter(
+                            (incident) => incident.status === "OPEN" && !incidentIdsWithTasks.has(incident.incidentId),
+                        ),
+                    );
                 }
             } finally {
                 setLoadingData(false);
@@ -92,7 +101,7 @@ export default function TaskCreatePage() {
             {/* Page heading */}
             <div>
                 <h2 className="text-base font-semibold text-slate-900">Create Task</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Assign a task to an employee for an open incident in your department.</p>
+                <p className="text-xs text-slate-500 mt-0.5">Assign a task to an employee for an open incident in your department that does not already have a task.</p>
             </div>
 
             {/* Form card */}
@@ -135,7 +144,7 @@ export default function TaskCreatePage() {
                         {loadingData ? (
                             <div className="input mt-1 flex items-center text-slate-400 text-xs">Loading…</div>
                         ) : incidents.length === 0 ? (
-                            <div className="input mt-1 flex items-center text-slate-400 text-xs">No open incidents available.</div>
+                            <div className="input mt-1 flex items-center text-slate-400 text-xs">No open incidents without a task are available.</div>
                         ) : (
                             <select
                                 className={`input mt-1 bg-white text-xs ${fieldErrors.incidentId ? "border-red-400" : ""}`}

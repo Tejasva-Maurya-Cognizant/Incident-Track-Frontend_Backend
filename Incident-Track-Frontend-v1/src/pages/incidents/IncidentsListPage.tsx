@@ -23,7 +23,7 @@ export default function IncidentsListPage() {
   const [scope, setScope] = useState<"MINE" | "ALL">(canSeeAll ? "ALL" : "MINE");
   const [status, setStatus] = useState<IncidentStatus | "">("");
   const [severity, setSeverity] = useState<IncidentSeverity | "">("");
-  const [onlyCritical, setOnlyCritical] = useState(false);
+  const [onlyUrgent, setOnlyUrgent] = useState(false);
 
   const [searchId, setSearchId] = useState<string>("");
   const [searchResult, setSearchResult] = useState<IncidentResponseDTO | null>(null);
@@ -40,8 +40,8 @@ export default function IncidentsListPage() {
     setSearchResult(null);
     try {
       let res;
-      if (onlyCritical) {
-        res = await incidentsApi.listCriticalPaged(p);
+      if (onlyUrgent) {
+        res = await incidentsApi.listUrgentPaged(p);
       } else if (canSeeAll && scope === "ALL") {
         // Admin/Manager viewing all incidents — apply status filter on admin endpoint
         if (status) {
@@ -64,13 +64,13 @@ export default function IncidentsListPage() {
     } finally {
       setLoading(false);
     }
-  }, [scope, status, onlyCritical, canSeeAll]);
+  }, [scope, status, onlyUrgent, canSeeAll]);
 
   // Reload whenever params or filters change
   useEffect(() => {
     load(params);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params, scope, status, onlyCritical]);
+  }, [params, scope, status, onlyUrgent]);
 
   // When a filter changes reset to page 0
   const resetToFirstPage = (newPartial: Partial<PageParams> = {}) => {
@@ -145,7 +145,7 @@ export default function IncidentsListPage() {
         <select
           className="input h-8 text-xs bg-white flex-1 min-w-0"
           value={status}
-          onChange={(e) => { setOnlyCritical(false); setSeverity(""); setStatus(e.target.value as any); resetToFirstPage(); }}
+          onChange={(e) => { setOnlyUrgent(false); setSeverity(""); setStatus(e.target.value as any); resetToFirstPage(); }}
         >
           <option value="">All Statuses</option>
           <option value="OPEN">OPEN</option>
@@ -156,7 +156,7 @@ export default function IncidentsListPage() {
         <select
           className="input h-8 text-xs bg-white flex-1 min-w-0"
           value={severity}
-          onChange={(e) => { setOnlyCritical(false); setStatus(""); setSeverity(e.target.value as any); resetToFirstPage(); }}
+          onChange={(e) => { setOnlyUrgent(false); setStatus(""); setSeverity(e.target.value as any); resetToFirstPage(); }}
         >
           <option value="">All Severities</option>
           <option value="CRITICAL">CRITICAL</option>
@@ -165,8 +165,8 @@ export default function IncidentsListPage() {
           <option value="LOW">LOW</option>
         </select>
         <label className="shrink-0 flex items-center gap-1.5 text-xs text-slate-700 whitespace-nowrap">
-          <input type="checkbox" checked={onlyCritical} onChange={(e) => { setOnlyCritical(e.target.checked); if (e.target.checked) { setStatus(""); setSeverity(""); } resetToFirstPage(); }} />
-          Only Critical
+          <input type="checkbox" checked={onlyUrgent} onChange={(e) => { setOnlyUrgent(e.target.checked); if (e.target.checked) { setStatus(""); setSeverity(""); } resetToFirstPage(); }} />
+          Only Urgent
         </label>
         <div className="flex gap-1 shrink-0">
           <div className="relative">

@@ -81,7 +81,7 @@ export default function HomePage() {
   const countOpen = incidents.filter((i) => i.status === "OPEN").length;
   const countInProgress = incidents.filter((i) => i.status === "IN_PROGRESS").length;
   const countResolved = incidents.filter((i) => i.status === "RESOLVED").length;
-  const countCritical = incidents.filter((i) => i.isCritical).length;
+  const countUrgent = incidents.filter((i) => i.urgent).length;
   const countTaskPending = tasks.filter((t) => t.status === "PENDING").length;
   const countTaskInProgress = tasks.filter((t) => t.status === "IN_PROGRESS").length;
   const countTaskDone = tasks.filter((t) => t.status === "COMPLETED").length;
@@ -126,7 +126,7 @@ export default function HomePage() {
           <StatCard label="Open" value={countOpen} accent="text-[#DC2626]" loading={loadingInc} />
           <StatCard label="In Progress" value={countInProgress} accent="text-[#D97706]" loading={loadingInc} />
           <StatCard label="Resolved" value={countResolved} accent="text-[#059669]" loading={loadingInc} />
-          <StatCard label="Critical" value={countCritical} accent="text-[#7C3AED]" loading={loadingInc} />
+          <StatCard label="Urgent" value={countUrgent} accent="text-[#7C3AED]" loading={loadingInc} />
         </div>
       </div>
 

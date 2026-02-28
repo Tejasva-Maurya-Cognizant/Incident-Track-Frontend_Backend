@@ -50,8 +50,8 @@ public class Incident {
     @Column(nullable = false)
     private IncidentSeverity calculatedSeverity;
 
-    @Column(nullable = false)
-    private Boolean isCritical;
+    @Column(name = "is_critical", nullable = false)
+    private Boolean urgent;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime reportedDate;
@@ -70,22 +70,17 @@ public class Incident {
 
     @PrePersist
     protected void onCreate() {
-        this.reportedDate = LocalDateTime.now();
-        this.status = IncidentStatus.OPEN;
-        // this.userMarkedCritical=Boolean.FALSE;
-        if (this.isCritical == null) {
-            this.isCritical = false;
+        if (this.reportedDate == null) {
+            this.reportedDate = LocalDateTime.now();
         }
-        if (this.slaBreached == null) this.slaBreached = false;
-
-        // SLA due date from category.slaTimeHours
-        if (this.category != null && this.category.getSlaTimeHours() != null) {
-            if (this.isCritical){
-                this.slaDueAt = (this.reportedDate.plusHours(2));
-            }
-            else {
-            this.slaDueAt = this.reportedDate.plusHours(this.category.getSlaTimeHours());
-            }
+        if (this.status == null) {
+            this.status = IncidentStatus.OPEN;
+        }
+        if (this.urgent == null) {
+            this.urgent = false;
+        }
+        if (this.slaBreached == null) {
+            this.slaBreached = false;
         }
     }
 }

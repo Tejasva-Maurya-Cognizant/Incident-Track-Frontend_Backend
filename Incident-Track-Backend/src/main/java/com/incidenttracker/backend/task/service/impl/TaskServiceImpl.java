@@ -129,14 +129,15 @@ public class TaskServiceImpl implements TaskService {
                 }
 
                 incident.setStatus(IncidentStatus.IN_PROGRESS);
+                Incident savedIncident = incidentRepository.save(incident);
 
                 Task task = Task.builder()
                                 .title(request.getTitle())
                                 .description(request.getDescription())
                                 .assignedTo(assignedTo)
                                 .assignedBy(currentUser)
-                                .dueDate(incident.getSlaDueAt())
-                                .incident(incident)
+                                .dueDate(savedIncident.getSlaDueAt())
+                                .incident(savedIncident)
                                 .status(TaskStatus.PENDING)
                                 .build();
 
@@ -192,9 +193,13 @@ public class TaskServiceImpl implements TaskService {
                 List<Task> tasks;
                 if (isManager(currentUser)) {
                         tasks = taskRepository.findByIncident_IncidentIdAndIncident_Category_Department_DepartmentId(
-                                        incidentId, getDepartmentIdRequired(currentUser));
+                                        incidentId, getDepartmentIdRequired(currentUser))
+                                        .stream()
+                                        .toList();
                 } else if (isAdmin(currentUser)) {
-                        tasks = taskRepository.findByIncident_IncidentId(incidentId);
+                        tasks = taskRepository.findByIncident_IncidentId(incidentId)
+                                        .stream()
+                                        .toList();
                 } else {
                         throw new ForbiddenException("Only admins and managers can view tasks by incident.");
                 }
