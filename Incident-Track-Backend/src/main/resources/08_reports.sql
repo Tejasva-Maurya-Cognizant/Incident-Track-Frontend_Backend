@@ -1,67 +1,11 @@
-INSERT IGNORE INTO reports
-(report_type, scope, scope_ref_id, incident_count, resolved_incident_count, sla_breached_count, sla_compliance_rate, average_resolution_time_hours, start_date, end_date, series_json, metrics_json, generated_by, generated_at)
-VALUES
-(
- 'SLA_COMPLIANCE',
- 'GLOBAL',
- NULL,
- 7,
- 2,
- 1,
- 85.7,
- 6.5,
- DATE_SUB(CURDATE(), INTERVAL 7 DAY),
- CURDATE(),
- '{"points":[{"date":"2026-02-09","count":2},{"date":"2026-02-10","count":3},{"date":"2026-02-11","count":2}]}',
- '{"critical":2,"high":2,"medium":2,"low":1}',
- (SELECT user_id FROM users WHERE email='it_admin@company.com' LIMIT 1),
- NOW(6) - INTERVAL 1 HOUR
-),
-(
- 'DEPARTMENT_PERFORMANCE',
- 'DEPARTMENT',
- (SELECT department_id FROM departments WHERE department_name='Information Technology' LIMIT 1),
- 2,
- 1,
- 0,
- 100.0,
- 4.2,
- DATE_SUB(CURDATE(), INTERVAL 30 DAY),
- CURDATE(),
- '{"topCategories":["VPN Access Failure","Network Issues"]}',
- '{"department":"Information Technology","avgResolveHours":4.2}',
- (SELECT user_id FROM users WHERE email='it_mgr@company.com' LIMIT 1),
- NOW(6) - INTERVAL 2 HOUR
-),
-(
- 'VOLUME_TREND',
- 'CATEGORY',
- (SELECT category_id FROM category WHERE category_name='IT / Technical' AND sub_category='VPN Access Failure' LIMIT 1),
- 1,
- 0,
- 0,
- 100.0,
- 0.0,
- DATE_SUB(CURDATE(), INTERVAL 14 DAY),
- CURDATE(),
- '{"points":[{"date":"2026-02-06","count":0},{"date":"2026-02-08","count":1}]}',
- '{"category":"VPN Access Failure"}',
- (SELECT user_id FROM users WHERE email='it_admin@company.com' LIMIT 1),
- NOW(6) - INTERVAL 3 HOUR
-),
-(
- 'PERIOD_REPORT',
- 'PERIOD',
- NULL,
- 5,
- 2,
- 1,
- 80.0,
- 7.8,
- DATE_SUB(CURDATE(), INTERVAL 5 DAY),
- DATE_SUB(CURDATE(), INTERVAL 1 DAY),
- '{"start":"last_5_days","end":"yesterday"}',
- '{"notes":"Sample period report"}',
- (SELECT user_id FROM users WHERE email='sec_admin@company.com' LIMIT 1),
- NOW(6) - INTERVAL 6 HOUR
-);
+INSERT IGNORE INTO reports (report_type, scope, scope_ref_id, incident_count, resolved_incident_count, sla_breached_count, sla_compliance_rate, average_resolution_time_hours, start_date, end_date, series_json, metrics_json, generated_by, generated_at) VALUES
+('SLA_COMPLIANCE', 'GLOBAL', NULL, 63, 18, 18, 71.4, 23.7, '2025-11-01', '2026-02-28', '{"points":[{"period":"2025-11","count":6},{"period":"2025-12","count":24},{"period":"2026-01","count":25},{"period":"2026-02","count":8}]}', '{"open":18,"inProgress":18,"resolved":18,"cancelled":9,"critical":9,"high":18,"medium":18,"low":18}', (SELECT user_id FROM users WHERE email = 'aarav.sharma@incidenttrack.demo' LIMIT 1), '2026-02-27 18:15:00'),
+('MONTHLY_DISTRIBUTION', 'GLOBAL', NULL, 63, 18, 18, 71.4, 23.7, '2025-11-01', '2026-02-28', '{"points":[{"period":"2025-11","count":6},{"period":"2025-12","count":24},{"period":"2026-01","count":25},{"period":"2026-02","count":8}]}', '{"open":18,"inProgress":18,"resolved":18,"cancelled":9,"critical":9,"high":18,"medium":18,"low":18}', (SELECT user_id FROM users WHERE email = 'ananya.kapoor@incidenttrack.demo' LIMIT 1), '2026-02-27 19:00:00'),
+('DEPARTMENT_PERFORMANCE', 'DEPARTMENT', (SELECT department_id FROM departments WHERE department_name = 'Information Technology' LIMIT 1), 7, 2, 2, 71.4, 9.5, '2025-11-01', '2026-02-28', '{"points":[{"label":"Application Crash","count":2},{"label":"VPN Access Failure","count":2},{"label":"Patch Deployment Failure","count":1},{"label":"File Server Inaccessible","count":1},{"label":"Database Outage","count":1}]}', '{"open":2,"inProgress":2,"resolved":2,"cancelled":1,"critical":1,"high":2,"medium":2,"low":2}', (SELECT user_id FROM users WHERE email = 'diya.sharma@incidenttrack.demo' LIMIT 1), '2026-02-28 09:15:00'),
+('DEPARTMENT_PERFORMANCE', 'DEPARTMENT', (SELECT department_id FROM departments WHERE department_name = 'Information Security' LIMIT 1), 7, 2, 2, 71.4, 9, '2025-11-01', '2026-02-28', '{"points":[{"label":"Privilege Escalation Attempt","count":2},{"label":"Phishing Attack","count":2},{"label":"Data Leakage Risk","count":1},{"label":"Firewall Misconfiguration","count":1},{"label":"Malware Infection","count":1}]}', '{"open":2,"inProgress":2,"resolved":2,"cancelled":1,"critical":1,"high":2,"medium":2,"low":2}', (SELECT user_id FROM users WHERE email = 'nisha.sharma@incidenttrack.demo' LIMIT 1), '2026-02-28 09:15:00'),
+('DEPARTMENT_PERFORMANCE', 'DEPARTMENT', (SELECT department_id FROM departments WHERE department_name = 'Finance & Accounting' LIMIT 1), 7, 2, 2, 71.4, 34, '2025-11-01', '2026-02-28', '{"points":[{"label":"Payment Failure","count":2},{"label":"Billing Discrepancy","count":2},{"label":"Revenue Leakage Identified","count":1},{"label":"Invoice Processing Delay","count":1},{"label":"Budget Overrun Alert","count":1}]}', '{"open":2,"inProgress":2,"resolved":2,"cancelled":1,"critical":1,"high":2,"medium":2,"low":2}', (SELECT user_id FROM users WHERE email = 'rohan.mehta@incidenttrack.demo' LIMIT 1), '2026-02-28 09:15:00'),
+('VOLUME_TREND', 'CATEGORY', (SELECT category_id FROM category WHERE category_name = 'Security' AND sub_category = 'Phishing Attack' LIMIT 1), 2, 0, 1, 50, 0, '2025-11-01', '2026-02-28', '{"points":[{"period":"2025-11","count":1},{"period":"2026-01","count":1}]}', '{"open":1,"inProgress":1,"resolved":0,"cancelled":0,"critical":0,"high":1,"medium":1,"low":0}', (SELECT user_id FROM users WHERE email = 'karan.sharma@incidenttrack.demo' LIMIT 1), '2026-02-28 10:00:00'),
+('PERIOD_REPORT', 'PERIOD', NULL, 24, 12, 4, 83.3, 17.2, '2025-12-01', '2025-12-31', '{"points":[{"period":"2025-12","count":24}]}', '{"open":4,"inProgress":8,"resolved":12,"cancelled":0,"critical":4,"high":8,"medium":4,"low":8}', (SELECT user_id FROM users WHERE email = 'arjun.nair@incidenttrack.demo' LIMIT 1), '2026-02-26 16:00:00'),
+('PERIOD_REPORT', 'PERIOD', NULL, 25, 6, 12, 52, 36.8, '2026-01-01', '2026-01-31', '{"points":[{"period":"2026-01","count":25}]}', '{"open":9,"inProgress":7,"resolved":6,"cancelled":3,"critical":5,"high":7,"medium":9,"low":4}', (SELECT user_id FROM users WHERE email = 'meera.patel@incidenttrack.demo' LIMIT 1), '2026-02-26 17:00:00'),
+('PERIOD_REPORT', 'PERIOD', NULL, 8, 0, 2, 75, 0, '2026-02-01', '2026-02-28', '{"points":[{"period":"2026-02","count":8}]}', '{"open":0,"inProgress":2,"resolved":0,"cancelled":6,"critical":0,"high":2,"medium":0,"low":6}', (SELECT user_id FROM users WHERE email = 'nisha.iyer@incidenttrack.demo' LIMIT 1), '2026-02-26 18:00:00');
+

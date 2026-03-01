@@ -1,19 +1,20 @@
-INSERT IGNORE INTO incident_sla_breach
-(incident_id, sla_due_at, breached_at, breach_minutes, breach_status, reason)
-VALUES
-(
- (SELECT incident_id FROM incidents WHERE description LIKE 'Possible phishing%' ORDER BY incident_id DESC LIMIT 1),
- NOW(6) - INTERVAL 30 MINUTE,
- NOW(6) - INTERVAL 15 MINUTE,
- 15,
- 'OPEN',
- 'SLA exceeded before resolution'
-),
-(
- (SELECT incident_id FROM incidents WHERE description LIKE 'Billing discrepancy%' ORDER BY incident_id DESC LIMIT 1),
- NOW(6) - INTERVAL 18 HOUR,
- NOW(6) - INTERVAL 12 HOUR,
- 360,
- 'RESOLVED',
- 'SLA breached but incident later resolved'
-);
+INSERT IGNORE INTO incident_sla_breach (incident_id, sla_due_at, breached_at, breach_minutes, breach_status, reason) VALUES
+((SELECT incident_id FROM incidents WHERE description = 'Shared audit folders cannot be opened in Chennai DR site; customer confirmations are delayed for the current shift.' LIMIT 1), '2025-12-21 23:15:00', '2025-12-22 00:45:00', 90, 'RESOLVED', 'Incident exceeded SLA before final resolution.'),
+((SELECT incident_id FROM incidents WHERE description = 'Remote staff cannot complete VPN login in Gurugram finance pod; two downstream teams are waiting for recovery confirmation.' LIMIT 1), '2026-01-12 14:15:00', '2026-01-12 14:45:00', 30, 'OPEN', 'Incident is still open beyond the committed SLA target.'),
+((SELECT incident_id FROM incidents WHERE description = 'A recent firewall rule blocked approved traffic in Hyderabad support floor; two downstream teams are waiting for recovery confirmation.' LIMIT 1), '2025-12-25 00:15:00', '2025-12-25 01:00:00', 45, 'RESOLVED', 'Incident exceeded SLA before final resolution.'),
+((SELECT incident_id FROM incidents WHERE description = 'Multiple users received a credential harvesting email in Noida operations bay; shift handover notes show repeated service degradation.' LIMIT 1), '2026-01-15 13:15:00', '2026-01-15 14:05:00', 50, 'OPEN', 'Incident is still open beyond the committed SLA target.'),
+((SELECT incident_id FROM incidents WHERE description = 'A change request was deployed without privacy impact sign-off in Gurugram finance pod; shift handover notes show repeated service degradation.' LIMIT 1), '2025-12-27 20:15:00', '2025-12-27 21:15:00', 60, 'RESOLVED', 'Incident exceeded SLA before final resolution.'),
+((SELECT incident_id FROM incidents WHERE description = 'Quarterly audit evidence is incomplete for a regulated control in Kolkata compliance desk; supervisors requested a same-day recovery commitment.' LIMIT 1), '2026-01-19 10:15:00', '2026-01-19 11:25:00', 70, 'OPEN', 'Incident is still open beyond the committed SLA target.'),
+((SELECT incident_id FROM incidents WHERE description = 'Employees cannot enter a restricted zone with valid badges in Noida operations bay; supervisors requested a same-day recovery commitment.' LIMIT 1), '2025-12-30 15:15:00', '2025-12-30 16:30:00', 75, 'RESOLVED', 'Incident exceeded SLA before final resolution.'),
+((SELECT incident_id FROM incidents WHERE description = 'Floor power has become unstable in a primary work area in Ahmedabad training room; the finance close process slipped by 45 minutes.' LIMIT 1), '2026-01-21 13:15:00', '2026-01-21 14:45:00', 90, 'OPEN', 'Incident is still open beyond the committed SLA target.'),
+((SELECT incident_id FROM incidents WHERE description = 'Vendor checks are pending for a critical hire in Kolkata compliance desk; the finance close process slipped by 45 minutes.' LIMIT 1), '2026-01-04 10:15:00', '2026-01-04 11:45:00', 90, 'RESOLVED', 'Incident exceeded SLA before final resolution.'),
+((SELECT incident_id FROM incidents WHERE description = 'A new joiner is blocked because onboarding assets are incomplete in Coimbatore network lab; customer confirmations are delayed for the current shift.' LIMIT 1), '2026-01-26 12:15:00', '2026-01-26 14:05:00', 110, 'OPEN', 'Incident is still open beyond the committed SLA target.'),
+((SELECT incident_id FROM incidents WHERE description = 'Finance shared services has a backlog in invoice posting in Ahmedabad training room; customer confirmations are delayed for the current shift.' LIMIT 1), '2026-01-07 11:15:00', '2026-01-07 12:00:00', 45, 'RESOLVED', 'Incident exceeded SLA before final resolution.'),
+((SELECT incident_id FROM incidents WHERE description = 'Vendor billing does not match the approved purchase order in Vizag service wing; two downstream teams are waiting for recovery confirmation.' LIMIT 1), '2026-01-28 08:15:00', '2026-01-28 08:45:00', 30, 'OPEN', 'Incident is still open beyond the committed SLA target.'),
+((SELECT incident_id FROM incidents WHERE description = 'A planned change was deployed without the required checklist in Coimbatore network lab; two downstream teams are waiting for recovery confirmation.' LIMIT 1), '2026-01-09 04:15:00', '2026-01-09 05:15:00', 60, 'RESOLVED', 'Incident exceeded SLA before final resolution.'),
+((SELECT incident_id FROM incidents WHERE description = 'The overnight operations batch stopped before completion in Jaipur admin block; shift handover notes show repeated service degradation.' LIMIT 1), '2026-01-30 17:15:00', '2026-01-30 18:05:00', 50, 'OPEN', 'Incident is still open beyond the committed SLA target.'),
+((SELECT incident_id FROM incidents WHERE description = 'A vendor license is nearing expiry for an active platform in Vizag service wing; shift handover notes show repeated service degradation.' LIMIT 1), '2026-01-12 08:15:00', '2026-01-12 09:30:00', 75, 'RESOLVED', 'Incident exceeded SLA before final resolution.'),
+((SELECT incident_id FROM incidents WHERE description = 'A strategic supplier is missing mandatory onboarding artefacts in Bengaluru HQ; supervisors requested a same-day recovery commitment.' LIMIT 1), '2026-02-05 10:15:00', '2026-02-05 11:25:00', 70, 'OPEN', 'Incident is still open beyond the committed SLA target.'),
+((SELECT incident_id FROM incidents WHERE description = 'An urgent client visit is blocked by delayed travel booking in Jaipur admin block; supervisors requested a same-day recovery commitment.' LIMIT 1), '2026-01-16 09:15:00', '2026-01-16 10:45:00', 90, 'RESOLVED', 'Incident exceeded SLA before final resolution.'),
+((SELECT incident_id FROM incidents WHERE description = 'Two executive meetings were scheduled in the same conference room in Mumbai branch; the finance close process slipped by 45 minutes.' LIMIT 1), '2026-02-06 11:15:00', '2026-02-06 12:45:00', 90, 'OPEN', 'Incident is still open beyond the committed SLA target.');
+

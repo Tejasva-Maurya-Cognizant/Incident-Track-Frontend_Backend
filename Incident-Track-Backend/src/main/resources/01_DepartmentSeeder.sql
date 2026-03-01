@@ -1,4 +1,4 @@
-INSERT IGNORE INTO departments (department_name) VALUES 
+INSERT IGNORE INTO departments (department_name) VALUES
 ('Information Technology'),
 ('Information Security'),
 ('Legal & Compliance'),
@@ -8,3 +8,4 @@ INSERT IGNORE INTO departments (department_name) VALUES
 ('Business Operations'),
 ('Procurement'),
 ('General Administration');
+
