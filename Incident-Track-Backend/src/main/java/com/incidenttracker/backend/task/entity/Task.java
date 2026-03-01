@@ -83,7 +83,9 @@ public class Task {
     // Initializes default task timestamps and workflow state.
     @PrePersist
     void onCreate() {
-        createdDate = DateTimeUtils.nowTruncatedToSeconds();
+        if (createdDate == null) {
+            createdDate = DateTimeUtils.nowTruncatedToSeconds();
+        }
         if (status == null) {
             status = TaskStatus.PENDING;
         }

@@ -42,6 +42,8 @@ public class AuditLog {
 
     @PrePersist
     void onCreate() {
-        timestamp = DateTimeUtils.nowTruncatedToSeconds();
+        if (timestamp == null) {
+            timestamp = DateTimeUtils.nowTruncatedToSeconds();
+        }
     }
 }

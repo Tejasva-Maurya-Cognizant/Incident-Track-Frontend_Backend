@@ -45,8 +45,12 @@ public class Notification {
 
 	@PrePersist
 	protected void onCreate() {
-		this.createdDateTime = DateTimeUtils.nowTruncatedToSeconds();
-		this.status = NotificationStatus.UNREAD;
+		if (this.createdDateTime == null) {
+			this.createdDateTime = DateTimeUtils.nowTruncatedToSeconds();
+		}
+		if (this.status == null) {
+			this.status = NotificationStatus.UNREAD;
+		}
 	}
 
 }

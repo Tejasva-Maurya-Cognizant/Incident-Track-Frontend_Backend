@@ -86,7 +86,9 @@ public class Report {
 
     @PrePersist
     void onCreate() {
-        generatedAt = DateTimeUtils.nowTruncatedToSeconds();
+        if (generatedAt == null) {
+            generatedAt = DateTimeUtils.nowTruncatedToSeconds();
+        }
     }
 }
 
