@@ -17,6 +17,13 @@ import {
     SlaComplianceBar,
     StatPill,
 } from "../../components/charts/ReportCharts";
+import {
+    TableBodyRow,
+    TableHeaderCell,
+    TableIdCell,
+    TABLE_HEADER_ROW_CLASS,
+    TABLE_HEADER_ROW_STYLE,
+} from "../../components/common/TablePrimitives";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const today = () => new Date().toISOString().slice(0, 10);
@@ -45,7 +52,7 @@ function SortIcon({ field, current, dir }: { field: string; current: string; dir
 }
 
 // ── Report Detail Drawer ──────────────────────────────────────────────────────
-function ReportDetailDrawer({ report, onClose }: { report: ReportResponseDto; onClose: () => void }) {
+function ReportDetailModal({ report, onClose }: { report: ReportResponseDto; onClose: () => void }) {
     const REPORT_TYPE_COLOR: Record<string, string> = {
         VOLUME_TREND: "bg-[#EEF4FF] text-[#175FFA]",
         SLA_COMPLIANCE: "bg-[#FEF9C3] text-[#A16207]",
@@ -61,10 +68,16 @@ function ReportDetailDrawer({ report, onClose }: { report: ReportResponseDto; on
 
     return (
         <>
-            {/* Backdrop */}
-            <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose} />
-            {/* Drawer */}
-            <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white z-50 shadow-2xl flex flex-col overflow-hidden">
+            <div
+                className="fixed inset-0 z-40"
+                style={{ background: "rgba(15,23,42,0.45)", backdropFilter: "blur(3px)" }}
+                onClick={onClose}
+            />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+                <div
+                    className="pointer-events-auto flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-[14px] border bg-white shadow-2xl"
+                    style={{ borderColor: "var(--border)" }}
+                >
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
                     <div>
@@ -186,6 +199,7 @@ function ReportDetailDrawer({ report, onClose }: { report: ReportResponseDto; on
                     )}
                 </div>
             </div>
+            </div>
         </>
     );
 }
@@ -225,9 +239,9 @@ function ReportHistoryTable({ reports, onView }: Pick<ReportHistoryTableProps, "
         return 0;
     });
 
-    const thSort = (field: HistSortField, label: string, align: "left" | "right" = "right") => (
+    const thSort = (field: HistSortField, label: string, align: "left" | "right" = "left") => (
         <th
-            className={`px-2 py-2 text-slate-500 font-medium uppercase tracking-wide text-[10px] cursor-pointer select-none hover:text-slate-800 ${align === "right" ? "text-right" : "text-left"}`}
+            className={`px-2 py-2 text-slate-500 font-semibold uppercase tracking-wide text-xs cursor-pointer select-none hover:text-slate-800 ${align === "right" ? "text-right" : "text-left"}`}
             onClick={() => handleSort(field)}
         >
             {label}<SortIcon field={field} current={sortField} dir={sortDir} />
@@ -241,27 +255,27 @@ function ReportHistoryTable({ reports, onView }: Pick<ReportHistoryTableProps, "
             ) : (
                 <table className="w-full text-xs border-collapse min-w-[780px]">
                     <thead>
-                        <tr className="border-b" style={{ borderColor: "var(--border)", background: "#F8FAFD" }}>
-                            {thSort("reportId", "ID", "left")}
-                            <th className="text-left px-2 py-2 text-slate-500 font-medium uppercase tracking-wide text-[10px]">Type</th>
-                            <th className="text-left px-2 py-2 text-slate-500 font-medium uppercase tracking-wide text-[10px]">Scope</th>
-                            <th className="text-left px-2 py-2 text-slate-500 font-medium uppercase tracking-wide text-[10px]">Period</th>
+                        <tr className={TABLE_HEADER_ROW_CLASS} style={TABLE_HEADER_ROW_STYLE}>
+                            {thSort("reportId", "Report ID", "left")}
+                            <TableHeaderCell>Type</TableHeaderCell>
+                            <TableHeaderCell>Scope</TableHeaderCell>
+                            <TableHeaderCell>Period</TableHeaderCell>
                             {thSort("incidentCount", "Incidents")}
                             {thSort("resolvedIncidentCount", "Resolved")}
                             {thSort("slaBreachedCount", "Breaches")}
                             {thSort("slaComplianceRate", "SLA %")}
                             {thSort("generatedAt", "Generated", "left")}
-                            <th className="px-2 py-2"></th>
+                            <TableHeaderCell>Action</TableHeaderCell>
                         </tr>
                     </thead>
                     <tbody>
                         {filtered.map((r, i) => (
-                            <tr
+                            <TableBodyRow
                                 key={r.reportId}
-                                className="border-t hover:bg-[#F0F7FF] transition-colors"
-                                style={{ borderColor: "var(--border)", background: i % 2 === 0 ? "white" : "#FAFCFF" }}
+                                index={i}
+                                onClick={() => onView(r)}
                             >
-                                <td className="px-3 py-2 font-mono text-slate-400">#{r.reportId}</td>
+                                <TableIdCell id={r.reportId} className="px-3" />
                                 <td className="px-2 py-2">
                                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${REPORT_TYPE_COLOR[r.reportType] ?? "bg-slate-100 text-slate-500"}`}>
                                         {r.reportType.replace(/_/g, " ")}
@@ -280,13 +294,16 @@ function ReportHistoryTable({ reports, onView }: Pick<ReportHistoryTableProps, "
                                 <td className="px-2 py-2 text-slate-500 whitespace-nowrap">{fmtDt(r.generatedAt)}</td>
                                 <td className="px-2 py-2">
                                     <button
-                                        onClick={() => onView(r)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onView(r);
+                                        }}
                                         className="h-6 px-2.5 rounded-[6px] text-[10px] font-medium border border-[#1E6FD9] text-[#1E6FD9] hover:bg-[#EEF4FF] transition-colors whitespace-nowrap"
                                     >
                                         View
                                     </button>
                                 </td>
-                            </tr>
+                            </TableBodyRow>
                         ))}
                     </tbody>
                 </table>
@@ -647,9 +664,9 @@ export default function AdminReportsPage() {
                 </>
             )}
 
-            {/* Report Detail Drawer */}
+            {/* Report Detail Modal */}
             {viewingReport && (
-                <ReportDetailDrawer report={viewingReport} onClose={() => setViewingReport(null)} />
+                <ReportDetailModal report={viewingReport} onClose={() => setViewingReport(null)} />
             )}
 
             {/* Tab bar */}

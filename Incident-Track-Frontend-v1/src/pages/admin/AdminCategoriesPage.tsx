@@ -7,6 +7,13 @@ import { getDepartmentId } from "../../features/departments/types";
 import type { PageParams } from "../../types/pagination";
 import Pagination from "../../components/common/Pagination";
 import SortableHeader from "../../components/common/SortableHeader";
+import {
+  TableBodyRow,
+  TableHeaderCell,
+  TableIdCell,
+  TABLE_HEADER_ROW_CLASS,
+  TABLE_HEADER_ROW_STYLE,
+} from "../../components/common/TablePrimitives";
 
 
 // ── Visibility badge ──────────────────────────────────────────────────────────
@@ -401,17 +408,14 @@ export default function AdminCategoriesPage() {
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-sm min-w-[560px]">
               <thead>
-                <tr
-                  className="text-xs uppercase tracking-wide text-slate-500 border-b"
-                  style={{ position: "sticky", top: 0, zIndex: 5, background: "#F8FAFD", borderColor: "var(--border)" }}
-                >
-                  <SortableHeader label="ID" field="categoryId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-14" />
+                <tr className={TABLE_HEADER_ROW_CLASS} style={TABLE_HEADER_ROW_STYLE}>
+                  <SortableHeader label="Category ID" field="categoryId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-14" />
                   <SortableHeader label="Category" field="categoryName" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} />
                   <SortableHeader label="Subcategory" field="subCategory" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} />
-                  <th className="text-left px-2 py-2 w-36">Department</th>
+                  <TableHeaderCell className="w-36">Department</TableHeaderCell>
                   <SortableHeader label="SLA (hrs)" field="slaTimeHours" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-24" />
-                  <th className="text-left px-2 py-2 w-24">Visibility</th>
-                  <th className="text-right px-2 py-2 w-32">Actions</th>
+                  <TableHeaderCell className="w-24">Visibility</TableHeaderCell>
+                  <TableHeaderCell className="w-32">Actions</TableHeaderCell>
                 </tr>
               </thead>
               <tbody>
@@ -426,9 +430,12 @@ export default function AdminCategoriesPage() {
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((c) => (
-                    <tr key={c.categoryId} className="border-t hover:bg-[#FAFCFF] transition" style={{ borderColor: "var(--border)" }}>
-                      <td className="px-2 py-2 text-xs font-mono text-slate-400">#{c.categoryId}</td>
+                  filtered.map((c, i) => (
+                    <TableBodyRow
+                      key={c.categoryId}
+                      index={i}
+                    >
+                      <TableIdCell id={c.categoryId} />
                       <td className="px-2 py-2 text-xs font-semibold text-slate-900">{c.categoryName}</td>
                       <td className="px-2 py-2 text-xs text-slate-600">{c.subCategory ?? "—"}</td>
                       <td className="px-2 py-2 text-xs text-slate-600">{c.departmentName ?? "—"}</td>
@@ -436,7 +443,7 @@ export default function AdminCategoriesPage() {
                       <td className="px-2 py-2">
                         <VisibilityBadge visible={c.isVisible !== false} />
                       </td>
-                      <td className="px-2 py-2 text-right">
+                      <td className="px-2 py-2">
                         <div className="inline-flex gap-1">
                           <button
                             type="button"
@@ -459,7 +466,7 @@ export default function AdminCategoriesPage() {
                           </button>
                         </div>
                       </td>
-                    </tr>
+                    </TableBodyRow>
                   ))
                 )}
               </tbody>

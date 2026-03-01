@@ -1,4 +1,5 @@
 ﻿import { useEffect, useMemo, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { incidentsApi } from "../../features/incidents/api";
 import type { IncidentResponseDTO, IncidentSeverity, IncidentStatus } from "../../features/incidents/types";
 import type { PageParams } from "../../types/pagination";
@@ -7,11 +8,19 @@ import StatusBadge from "../../components/common/StatusBadge";
 import PriorityBadge from "../../components/common/PriorityBadge";
 import Pagination from "../../components/common/Pagination";
 import SortableHeader from "../../components/common/SortableHeader";
+import {
+  TableBodyRow,
+  TableHeaderCell,
+  TableIdCell,
+  TABLE_HEADER_ROW_CLASS,
+  TABLE_HEADER_ROW_STYLE,
+} from "../../components/common/TablePrimitives";
 
 const DEFAULT_PARAMS: PageParams = { page: 0, size: 10, sortBy: "reportedDate", sortDir: "desc" };
 
 export default function IncidentsListPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const role = user?.role ?? "EMPLOYEE";
   const isManager = role === "MANAGER";
 
@@ -192,14 +201,14 @@ export default function IncidentsListPage() {
         <div className="overflow-x-auto flex-1">
           <table className="w-full text-sm min-w-[600px]">
             <thead>
-              <tr className="text-xs uppercase tracking-wide text-slate-500" style={{ position: "sticky", top: 0, zIndex: 5, background: "#F8FAFD" }}>
-                <SortableHeader label="ID" field="incidentId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-14" />
-                <th className="text-left px-2 py-2 w-28">Category</th>
-                <th className="text-left px-2 py-2 w-48">Sub-Category</th>
+              <tr className={TABLE_HEADER_ROW_CLASS} style={TABLE_HEADER_ROW_STYLE}>
+                <SortableHeader label="Incident ID" field="incidentId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-14" />
+                <TableHeaderCell className="w-28">Category</TableHeaderCell>
+                <TableHeaderCell className="w-48">Sub-Category</TableHeaderCell>
                 <SortableHeader label="Status" field="status" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-24" />
                 <SortableHeader label="Severity" field="calculatedSeverity" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-20" />
                 <SortableHeader label="Reported" field="reportedDate" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-20" />
-                <th className="text-right px-2 py-2 w-24">Actions</th>
+                <TableHeaderCell className="w-24">Actions</TableHeaderCell>
               </tr>
             </thead>
             <tbody>
@@ -212,9 +221,13 @@ export default function IncidentsListPage() {
                   <td className="px-2 py-4 text-slate-600" colSpan={7}>No incidents found.</td>
                 </tr>
               ) : (
-                filteredItems.map((it) => (
-                  <tr key={it.incidentId} className="border-t hover:bg-[#FAFCFF]" style={{ borderColor: "var(--border)" }}>
-                    <td className="px-2 py-2 font-medium text-slate-900 w-14 text-xs">{it.incidentId}</td>
+                filteredItems.map((it, index) => (
+                  <TableBodyRow
+                    key={it.incidentId}
+                    index={index}
+                    onClick={() => navigate(`/incidents/${it.incidentId}`)}
+                  >
+                    <TableIdCell id={it.incidentId} className="w-14" />
                     <td className="px-2 py-2 text-slate-700 w-28">
                       <span className="block truncate max-w-[112px] text-xs">{it.categoryName}</span>
                     </td>
@@ -227,12 +240,13 @@ export default function IncidentsListPage() {
                       {new Date(it.reportedDate).toLocaleDateString()}<br />
                       <span className="text-slate-400">{new Date(it.reportedDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                     </td>
-                    <td className="px-2 py-2 text-right w-24">
+                    <td className="px-2 py-2 w-24">
                       <div className="inline-flex gap-1">
                         <a
                           href={`/incidents/${it.incidentId}`}
                           className="h-7 px-2 rounded-[6px] bg-white border text-xs font-medium hover:bg-[#FAFCFF] inline-flex items-center"
                           style={{ borderColor: "var(--border)" }}
+                          onClick={(e) => e.stopPropagation()}
                         >
                           View
                         </a>
@@ -241,6 +255,7 @@ export default function IncidentsListPage() {
                             href={`/tasks/create?incidentId=${it.incidentId}`}
                             className="h-7 px-2 rounded-[6px] bg-white border text-xs font-medium hover:bg-[#FAFCFF] inline-flex items-center"
                             style={{ borderColor: "var(--border)" }}
+                            onClick={(e) => e.stopPropagation()}
                           >
                             Task
                           </a>
@@ -250,13 +265,14 @@ export default function IncidentsListPage() {
                             href={`/incidents/${it.incidentId}?mode=status`}
                             className="h-7 px-2 rounded-[6px] bg-white border text-xs font-medium hover:bg-[#FAFCFF] inline-flex items-center"
                             style={{ borderColor: "var(--border)" }}
+                            onClick={(e) => e.stopPropagation()}
                           >
                             Update
                           </a>
                         )}
                       </div>
                     </td>
-                  </tr>
+                  </TableBodyRow>
                 ))
               )}
             </tbody>

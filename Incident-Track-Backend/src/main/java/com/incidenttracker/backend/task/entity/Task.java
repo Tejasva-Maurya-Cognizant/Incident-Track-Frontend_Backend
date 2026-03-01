@@ -2,6 +2,7 @@ package com.incidenttracker.backend.task.entity;
 
 import java.time.LocalDateTime;
 
+import com.incidenttracker.backend.common.util.DateTimeUtils;
 import com.incidenttracker.backend.common.enums.TaskStatus;
 import com.incidenttracker.backend.incident.entity.Incident;
 import com.incidenttracker.backend.user.entity.User;
@@ -82,7 +83,7 @@ public class Task {
     // Initializes default task timestamps and workflow state.
     @PrePersist
     void onCreate() {
-        createdDate = LocalDateTime.now();
+        createdDate = DateTimeUtils.nowTruncatedToSeconds();
         if (status == null) {
             status = TaskStatus.PENDING;
         }

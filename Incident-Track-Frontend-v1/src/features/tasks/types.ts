@@ -15,7 +15,9 @@ export interface TaskResponseDTO {
   dueDate: string | null;      // LocalDateTime as ISO string
   createdDate: string | null;
   assignedTo: number;          // userId of assignee
+  assignedToUsername: string | null;
   assignedBy: number;          // userId of assigner
+  assignedByUsername: string | null;
   incidentId: number;
 }
 

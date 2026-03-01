@@ -8,6 +8,13 @@ import type { TaskResponseDTO } from "../features/tasks/types";
 import StatusBadge from "../components/common/StatusBadge";
 import PriorityBadge from "../components/common/PriorityBadge";
 import TaskStatusBadge from "../components/common/TaskStatusBadge";
+import {
+  TableBodyRow,
+  TableHeaderCell,
+  TableIdCell,
+  TABLE_HEADER_ROW_CLASS,
+  TABLE_HEADER_ROW_STYLE,
+} from "../components/common/TablePrimitives";
 
 function StatCard({ label, value, accent, loading }: { label: string; value: number | string; accent: string; loading: boolean }) {
   return (
@@ -195,27 +202,30 @@ export default function HomePage() {
           <div className="overflow-x-auto">
             <table className="w-full text-xs min-w-[480px]">
               <thead>
-                <tr className="border-b text-left text-[10px] uppercase tracking-wide text-slate-400" style={{ borderColor: "var(--border)", background: "#F8FAFD" }}>
-                  <th className="px-4 py-2 w-12">ID</th>
-                  <th className="px-4 py-2">Title</th>
-                  <th className="px-4 py-2 w-28">Status</th>
-                  <th className="px-4 py-2 w-20">Incident</th>
-                  <th className="px-4 py-2 w-16"></th>
+                <tr className={TABLE_HEADER_ROW_CLASS} style={TABLE_HEADER_ROW_STYLE}>
+                  <TableHeaderCell className="px-4 w-12">Task ID</TableHeaderCell>
+                  <TableHeaderCell className="px-4">Title</TableHeaderCell>
+                  <TableHeaderCell className="px-4 w-28">Status</TableHeaderCell>
+                  <TableHeaderCell className="px-4 w-20">Incident</TableHeaderCell>
+                  <TableHeaderCell className="px-4 w-16">Action</TableHeaderCell>
                 </tr>
               </thead>
               <tbody className="divide-y" style={{ borderColor: "var(--border)" }}>
-                {recentTasks.map((t) => (
-                  <tr key={t.taskId} className="hover:bg-[#FAFCFF] transition">
-                    <td className="px-4 py-2 font-mono text-slate-400">#{t.taskId}</td>
+                {recentTasks.map((t, i) => (
+                  <TableBodyRow
+                    key={t.taskId}
+                    index={i}
+                  >
+                    <TableIdCell id={t.taskId} className="px-4" />
                     <td className="px-4 py-2 font-medium text-slate-900 max-w-[200px] truncate">{t.title}</td>
                     <td className="px-4 py-2"><TaskStatusBadge status={t.status} /></td>
                     <td className="px-4 py-2 font-mono text-slate-500">
-                      <Link to={`/incidents/${t.incidentId}`} className="text-[#175FFA] hover:underline">#{t.incidentId}</Link>
+                      <Link to={`/incidents/${t.incidentId}?fromTask=true`} className="text-[#175FFA] hover:underline">#{t.incidentId}</Link>
                     </td>
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-4 py-2">
                       <Link to={`/tasks/${t.taskId}`} className="text-[#175FFA] hover:underline">View</Link>
                     </td>
-                  </tr>
+                  </TableBodyRow>
                 ))}
               </tbody>
             </table>

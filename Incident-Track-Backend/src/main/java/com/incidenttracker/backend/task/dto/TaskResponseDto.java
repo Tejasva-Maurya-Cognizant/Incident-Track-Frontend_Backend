@@ -24,8 +24,12 @@ public class TaskResponseDto {
     private LocalDateTime createdDate;
     // Assignee user id.
     private Long assignedTo;
+    // Assignee username.
+    private String assignedToUsername;
     // Assigner user id.
     private Long assignedBy;
+    // Assigner username.
+    private String assignedByUsername;
     // Linked incident id.
     private Long incidentId;
 

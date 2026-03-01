@@ -7,6 +7,13 @@ import { getDepartmentId } from "../../features/departments/types";
 import type { PageParams } from "../../types/pagination";
 import Pagination from "../../components/common/Pagination";
 import SortableHeader from "../../components/common/SortableHeader";
+import {
+    TableBodyRow,
+    TableHeaderCell,
+    TableIdCell,
+    TABLE_HEADER_ROW_CLASS,
+    TABLE_HEADER_ROW_STYLE,
+} from "../../components/common/TablePrimitives";
 
 // ── Status badge ─────────────────────────────────────────────────────────────
 function UserStatusBadge({ status }: { status: UserStatus }) {
@@ -199,15 +206,12 @@ export default function ManagerUsersPage() {
                 <div className="card overflow-x-auto">
                     <table className="w-full text-sm min-w-[560px]">
                         <thead>
-                            <tr
-                                className="text-xs uppercase tracking-wide text-slate-500 border-b"
-                                style={{ position: "sticky", top: 0, zIndex: 5, background: "#F8FAFD", borderColor: "var(--border)" }}
-                            >
-                                <SortableHeader label="ID" field="userId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-14" />
+                            <tr className={TABLE_HEADER_ROW_CLASS} style={TABLE_HEADER_ROW_STYLE}>
+                                <SortableHeader label="Employee ID" field="userId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-14" />
                                 <SortableHeader label="Username" field="username" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-36" />
                                 <SortableHeader label="Email" field="email" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} />
-                                <th className="text-left px-2 py-2 w-24">Status</th>
-                                <th className="text-right px-2 py-2 w-20">Actions</th>
+                                <TableHeaderCell className="w-24">Status</TableHeaderCell>
+                                <TableHeaderCell className="w-20">Actions</TableHeaderCell>
                             </tr>
                         </thead>
                         <tbody>
@@ -220,13 +224,16 @@ export default function ManagerUsersPage() {
                                     <td className="px-2 py-6 text-slate-400 text-xs" colSpan={5}>No employees found.</td>
                                 </tr>
                             ) : (
-                                filtered.map((u) => (
-                                    <tr key={u.userId} className="border-t hover:bg-[#FAFCFF] transition" style={{ borderColor: "var(--border)" }}>
-                                        <td className="px-2 py-2 text-xs font-mono text-slate-400">#{u.userId}</td>
+                                filtered.map((u, i) => (
+                                    <TableBodyRow
+                                        key={u.userId}
+                                        index={i}
+                                    >
+                                        <TableIdCell id={u.userId} />
                                         <td className="px-2 py-2 text-xs font-semibold text-slate-900">{u.username}</td>
                                         <td className="px-2 py-2 text-xs text-slate-600">{u.email}</td>
                                         <td className="px-2 py-2"><UserStatusBadge status={u.status} /></td>
-                                        <td className="px-2 py-2 text-right">
+                                        <td className="px-2 py-2">
                                             <button
                                                 onClick={() => setViewUser(u)}
                                                 className="h-7 px-2.5 rounded-[6px] bg-white border text-xs font-medium hover:bg-[#FAFCFF] inline-flex items-center gap-1"
@@ -239,7 +246,7 @@ export default function ManagerUsersPage() {
                                                 View
                                             </button>
                                         </td>
-                                    </tr>
+                                    </TableBodyRow>
                                 ))
                             )}
                         </tbody>

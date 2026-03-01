@@ -166,6 +166,15 @@ public class IncidentController {
         }
 
         @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
+        @GetMapping("/task-access/{incidentId}")
+        public ResponseEntity<IncidentResponseDTO> getIncidentDetailsForTaskContext(@PathVariable Long incidentId) {
+                IncidentResponseDTO incidents = incidentService.getIncidentDetailsForTaskContext(incidentId);
+                return ResponseEntity
+                                .ok()
+                                .body(incidents);
+        }
+
+        @PreAuthorize("hasAnyRole('ADMIN','MANAGER','EMPLOYEE')")
         @PutMapping("/withdraw/{incidentId}")
         public ResponseEntity<IncidentResponseDTO> withdrawIncident(@PathVariable Long incidentId) {
                 IncidentResponseDTO incidents = incidentService.withdrawIncident(incidentId);

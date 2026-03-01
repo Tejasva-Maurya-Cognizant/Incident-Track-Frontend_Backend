@@ -21,6 +21,7 @@ import com.incidenttracker.backend.common.exception.ConflictException;
 import com.incidenttracker.backend.common.exception.ForbiddenException;
 import com.incidenttracker.backend.common.exception.ResourceNotFoundException;
 import com.incidenttracker.backend.common.security.SecurityService;
+import com.incidenttracker.backend.common.util.DateTimeUtils;
 import com.incidenttracker.backend.incident.entity.Incident;
 import com.incidenttracker.backend.incident.repository.IncidentRepository;
 import com.incidenttracker.backend.notification.service.NotificationService;
@@ -335,7 +336,7 @@ public class TaskServiceImpl implements TaskService {
 
                 TaskStatus oldStatus = task.getStatus();
                 if (newStatus == TaskStatus.COMPLETED) {
-                        task.setCompletedDate(LocalDateTime.now());
+                        task.setCompletedDate(DateTimeUtils.nowTruncatedToSeconds());
                 }
                 task.setStatus(newStatus);
 
@@ -350,7 +351,7 @@ public class TaskServiceImpl implements TaskService {
                 if (newStatus == TaskStatus.COMPLETED) {
                         IncidentStatus oldIncidentStatus = incident.getStatus();
                         incident.setStatus(IncidentStatus.RESOLVED);
-                        incident.setResolvedDate(LocalDateTime.now());
+                        incident.setResolvedDate(DateTimeUtils.nowTruncatedToSeconds());
 
                         Incident savedIncident = incidentRepository.save(incident);
                         notificationService.notifyReporterIncidentResolved(savedIncident);
@@ -484,7 +485,9 @@ public class TaskServiceImpl implements TaskService {
                                 .title(task.getTitle())
                                 .status(task.getStatus())
                                 .assignedTo(task.getAssignedTo().getUserId())
+                                .assignedToUsername(task.getAssignedTo().getUsername())
                                 .assignedBy(task.getAssignedBy().getUserId())
+                                .assignedByUsername(task.getAssignedBy().getUsername())
                                 .incidentId(task.getIncident().getIncidentId())
                                 .dueDate(task.getDueDate())
                                 .build();

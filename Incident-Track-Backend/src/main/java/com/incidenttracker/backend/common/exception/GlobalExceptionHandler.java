@@ -14,6 +14,8 @@ import jakarta.validation.ConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
+import com.incidenttracker.backend.common.util.DateTimeUtils;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -86,7 +88,7 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String message) {
-        ErrorResponse response = new ErrorResponse(status.value(), message, LocalDateTime.now());
+        ErrorResponse response = new ErrorResponse(status.value(), message, DateTimeUtils.nowTruncatedToSeconds());
         return new ResponseEntity<>(response, status);
     }
 }

@@ -5,6 +5,12 @@ import { getDepartmentId } from "../../features/departments/types";
 import type { PageParams } from "../../types/pagination";
 import Pagination from "../../components/common/Pagination";
 import SortableHeader from "../../components/common/SortableHeader";
+import {
+  TableBodyRow,
+  TableIdCell,
+  TABLE_HEADER_ROW_CLASS,
+  TABLE_HEADER_ROW_STYLE,
+} from "../../components/common/TablePrimitives";
 
 const DEFAULT_PARAMS: PageParams = { page: 0, size: 10, sortBy: "departmentName", sortDir: "asc" };
 
@@ -83,8 +89,8 @@ export default function AdminDepartmentsPage() {
         <div className="overflow-x-auto flex-1">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-xs uppercase tracking-wide text-slate-500" style={{ position: "sticky", top: 0, zIndex: 5, background: "#F8FAFD" }}>
-                <SortableHeader label="ID" field="departmentId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} />
+              <tr className={TABLE_HEADER_ROW_CLASS} style={TABLE_HEADER_ROW_STYLE}>
+                <SortableHeader label="Department ID" field="departmentId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} />
                 <SortableHeader label="Name" field="departmentName" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} />
               </tr>
             </thead>
@@ -94,11 +100,14 @@ export default function AdminDepartmentsPage() {
               ) : items.length === 0 ? (
                 <tr><td className="px-2 py-4 text-slate-600 text-xs" colSpan={2}>No departments found.</td></tr>
               ) : (
-                items.map((d) => (
-                  <tr key={getDepartmentId(d)} className="border-t hover:bg-[#FAFCFF]" style={{ borderColor: "var(--border)" }}>
-                    <td className="px-2 py-2 font-medium text-slate-900 text-xs">{getDepartmentId(d)}</td>
+                items.map((d, i) => (
+                  <TableBodyRow
+                    key={getDepartmentId(d)}
+                    index={i}
+                  >
+                    <TableIdCell id={getDepartmentId(d)} />
                     <td className="px-2 py-2 text-slate-700 text-xs">{d.departmentName}</td>
-                  </tr>
+                  </TableBodyRow>
                 ))
               )}
             </tbody>

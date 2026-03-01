@@ -9,6 +9,7 @@ import com.incidenttracker.backend.audit_v1.entity.IncidentSlaBreach;
 import com.incidenttracker.backend.audit_v1.repository.IncidentSlaBreachRepository;
 import com.incidenttracker.backend.common.enums.ActionType;
 import com.incidenttracker.backend.common.enums.BreachStatus;
+import com.incidenttracker.backend.common.util.DateTimeUtils;
 import com.incidenttracker.backend.incident.entity.Incident;
 import com.incidenttracker.backend.incident.repository.IncidentRepository;
 import com.incidenttracker.backend.notification.service.NotificationService;
@@ -31,7 +32,7 @@ public class SlaComplianceService {
     @Scheduled(fixedDelay = 5 * 60 * 1000) // 5 minutes
     @Transactional
     public void detectSlaBreaches() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateTimeUtils.nowTruncatedToSeconds();
 
         List<Incident> overdue = incidentRepository.findSlaOverdueNotMarked(now);
 
@@ -66,7 +67,7 @@ public class SlaComplianceService {
 
             // audit log entry for breach
             auditService.log(incident, null, ActionType.INCIDENT_UPDATED,
-                    "SLA BREACH detected. DueAt= " + due + ", breachedAt=" + now + ", lateMinutes= " + minutesLate);
+                    "SLA BREACH detected. DueAt= " + DateTimeUtils.truncateToSeconds(due) + ", breachedAt=" + now + ", lateMinutes= " + minutesLate);
         }
     }
 }

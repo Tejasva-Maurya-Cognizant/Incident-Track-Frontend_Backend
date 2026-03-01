@@ -5,6 +5,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 import com.incidenttracker.backend.common.enums.ActionType;
+import com.incidenttracker.backend.common.util.DateTimeUtils;
 import com.incidenttracker.backend.incident.entity.Incident;
 import com.incidenttracker.backend.user.entity.User;
 
@@ -41,6 +42,6 @@ public class AuditLog {
 
     @PrePersist
     void onCreate() {
-        timestamp = LocalDateTime.now();
+        timestamp = DateTimeUtils.nowTruncatedToSeconds();
     }
 }

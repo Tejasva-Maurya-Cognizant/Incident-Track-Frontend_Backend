@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.incidenttracker.backend.common.enums.NotificationStatus;
 import com.incidenttracker.backend.common.enums.NotificationType;
+import com.incidenttracker.backend.common.util.DateTimeUtils;
 import com.incidenttracker.backend.user.entity.User;
 
 import jakarta.persistence.Entity;
@@ -44,7 +45,7 @@ public class Notification {
 
 	@PrePersist
 	protected void onCreate() {
-		this.createdDateTime = LocalDateTime.now();
+		this.createdDateTime = DateTimeUtils.nowTruncatedToSeconds();
 		this.status = NotificationStatus.UNREAD;
 	}
 

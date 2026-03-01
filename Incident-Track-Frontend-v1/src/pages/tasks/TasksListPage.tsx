@@ -9,6 +9,13 @@ import { useAuth } from "../../context/AuthContext";
 import TaskStatusBadge from "../../components/common/TaskStatusBadge";
 import Pagination from "../../components/common/Pagination";
 import SortableHeader from "../../components/common/SortableHeader";
+import {
+  TableBodyRow,
+  TableHeaderCell,
+  TableIdCell,
+  TABLE_HEADER_ROW_CLASS,
+  TABLE_HEADER_ROW_STYLE,
+} from "../../components/common/TablePrimitives";
 
 const DEFAULT_PARAMS: PageParams = {
   page: 0,
@@ -196,23 +203,27 @@ export default function TasksListPage() {
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-sm min-w-[580px]">
               <thead>
-                <tr className="text-xs uppercase tracking-wide text-slate-500" style={{ position: "sticky", top: 0, zIndex: 5, background: "#F8FAFD" }}>
-                  <SortableHeader label="ID" field="taskId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-12" />
+                <tr className={TABLE_HEADER_ROW_CLASS} style={TABLE_HEADER_ROW_STYLE}>
+                  <SortableHeader label="Task ID" field="taskId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-12" />
                   <SortableHeader label="Title" field="title" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-[240px]" />
-                  <th className="text-left px-2 py-2 w-[90px]">Status</th>
-                  <th className="text-left px-2 py-2 w-[80px]">Incident</th>
+                  <TableHeaderCell className="w-[90px]">Status</TableHeaderCell>
+                  <TableHeaderCell className="w-[80px]">Incident</TableHeaderCell>
                   {!isEmployee && (
-                    <th className="text-left px-2 py-2 w-[110px]">Assigned To</th>
+                    <TableHeaderCell className="w-[110px]">Assigned To</TableHeaderCell>
                   )}
                   <SortableHeader label="Created" field="createdDate" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-[100px]" />
                   <SortableHeader label="Due" field="dueDate" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="px-2 py-2 w-[100px]" />
-                  <th className="text-left px-2 py-2 w-[90px]">Action</th>
+                  <TableHeaderCell className="w-[90px]">Action</TableHeaderCell>
                 </tr>
               </thead>
               <tbody className="divide-y" style={{ borderColor: "var(--border)" }}>
-                {filteredItems.map((task) => (
-                  <tr key={task.taskId} className="hover:bg-[#FAFCFF] transition-colors">
-                    <td className="px-2 py-2 text-slate-500 font-mono text-xs">#{task.taskId}</td>
+                {filteredItems.map((task, index) => (
+                  <TableBodyRow
+                    key={task.taskId}
+                    index={index}
+                    onClick={() => navigate(`/tasks/${task.taskId}`)}
+                  >
+                    <TableIdCell id={task.taskId} />
                     <td className="px-2 py-2">
                       <span className="font-medium text-slate-900 line-clamp-2 max-w-[240px] block leading-snug text-xs">
                         {task.title}
@@ -223,8 +234,9 @@ export default function TasksListPage() {
                     </td>
                     <td className="px-2 py-2 text-slate-600 font-mono text-xs">
                       <Link
-                        to={`/incidents/${task.incidentId}`}
+                        to={`/incidents/${task.incidentId}?fromTask=true`}
                         className="text-[#175FFA] hover:underline"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         #{task.incidentId}
                       </Link>
@@ -245,14 +257,17 @@ export default function TasksListPage() {
                     <td className="px-2 py-2 text-xs text-slate-600 leading-snug">{fmtDate(task.dueDate)}</td>
                     <td className="px-2 py-2">
                       <button
-                        onClick={() => navigate(`/tasks/${task.taskId}`)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/tasks/${task.taskId}`);
+                        }}
                         className="h-7 px-3 text-xs rounded-md border font-medium hover:bg-[#FAFCFF] transition-colors"
                         style={{ borderColor: "var(--border)" }}
                       >
                         View
                       </button>
                     </td>
-                  </tr>
+                  </TableBodyRow>
                 ))}
               </tbody>
             </table>

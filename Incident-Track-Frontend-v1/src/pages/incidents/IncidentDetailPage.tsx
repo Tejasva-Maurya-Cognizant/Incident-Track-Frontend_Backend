@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link, useSearchParams } from "react-router-dom";
 import { incidentsApi } from "../../features/incidents/api";
 import type { IncidentResponseDTO, IncidentStatus } from "../../features/incidents/types";
 import { useAuth } from "../../context/AuthContext";
@@ -24,14 +24,15 @@ function InfoRow({ label, children }: { label: string; children: React.ReactNode
 
 export default function IncidentDetailPage() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const incidentId = Number(id);
   const navigate = useNavigate();
 
   const { user } = useAuth();
   const role = user?.role ?? "EMPLOYEE";
+  const fromTask = searchParams.get("fromTask") === "true";
   const canSeeAll = role === "ADMIN" || role === "MANAGER";
   const canUpdateStatus = role === "ADMIN" || role === "MANAGER";
-  const canWithdraw = role === "EMPLOYEE";
   const canCreateTask = role === "MANAGER";
 
   const [data, setData] = useState<IncidentResponseDTO | null>(null);
@@ -52,7 +53,9 @@ export default function IncidentDetailPage() {
     try {
       const res = canSeeAll
         ? await incidentsApi.getByIdAdminManager(incidentId)
-        : await incidentsApi.getByIdMine(incidentId);
+        : fromTask
+          ? await incidentsApi.getByIdTaskAccess(incidentId)
+          : await incidentsApi.getByIdMine(incidentId);
       setData(res);
       setNewStatus(res.status === "OPEN" ? "RESOLVED" : res.status);
     } catch (e: any) {
@@ -66,7 +69,7 @@ export default function IncidentDetailPage() {
     if (!incidentId) return;
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [incidentId]);
+  }, [incidentId, fromTask]);
 
   const onWithdraw = async () => {
     setWithdrawing(true);
@@ -111,19 +114,24 @@ export default function IncidentDetailPage() {
     return (
       <div className="card p-6 text-center">
         <p className="text-xs text-red-600 mb-3">{err}</p>
-        <Link to="/incidents" className="text-xs text-[#175FFA] hover:underline">Back to Incidents</Link>
+        <Link to={fromTask ? "/tasks" : "/incidents"} className="text-xs text-[#175FFA] hover:underline">
+          {fromTask ? "Back to Tasks" : "Back to Incidents"}
+        </Link>
       </div>
     );
 
   if (!data) return null;
 
+  const canWithdraw = role === "EMPLOYEE" && data.userId === user?.userId;
   const canManuallyClose = canUpdateStatus && data.status === "OPEN";
 
   return (
     <div className="page-panel space-y-3">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-xs text-slate-500">
-        <Link to="/incidents" className="hover:text-[#175FFA] transition-colors">Incidents</Link>
+        <Link to={fromTask ? "/tasks" : "/incidents"} className="hover:text-[#175FFA] transition-colors">
+          {fromTask ? "Tasks" : "Incidents"}
+        </Link>
         <span>/</span>
         <span className="text-slate-900 font-medium">Incident #{data.incidentId}</span>
       </div>

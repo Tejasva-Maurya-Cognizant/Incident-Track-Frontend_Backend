@@ -19,14 +19,15 @@ import com.incidenttracker.backend.common.enums.IncidentSeverity;
 import com.incidenttracker.backend.common.enums.IncidentStatus;
 import com.incidenttracker.backend.common.enums.UserRole;
 import com.incidenttracker.backend.common.security.SecurityService;
+import com.incidenttracker.backend.common.util.DateTimeUtils;
 import com.incidenttracker.backend.incident.dto.IncidentRequestDTO;
 import com.incidenttracker.backend.incident.dto.IncidentResponseDTO;
 import com.incidenttracker.backend.incident.dto.IncidentStatusUpdateRequestDTO;
 import com.incidenttracker.backend.incident.entity.Incident;
-
 import com.incidenttracker.backend.incident.repository.IncidentRepository;
 import com.incidenttracker.backend.incident.service.IncidentService;
 import com.incidenttracker.backend.notification.service.NotificationService;
+import com.incidenttracker.backend.task.repository.TaskRepository;
 import com.incidenttracker.backend.user.entity.User;
 
 import jakarta.transaction.Transactional;
@@ -37,6 +38,7 @@ import lombok.RequiredArgsConstructor;
 public class IncidentServiceImpl implements IncidentService {
 
 	private final IncidentRepository incidentRepository;
+	private final TaskRepository taskRepository;
 	private final CategoryRepository categoryRepository;
 	private final SecurityService securityService;
 	private final IncidentSlaBreachRepository breachRepository;
@@ -63,6 +65,22 @@ public class IncidentServiceImpl implements IncidentService {
 		}
 		return incidentRepository.findById(incidentId)
 				.orElseThrow(() -> new RuntimeException("Incident not found"));
+	}
+
+	private Incident getTaskAccessibleIncident(Long incidentId, User currentUser) {
+		Incident ownIncident = incidentRepository.findByIncidentIdAndReportedBy_UserId(incidentId, currentUser.getUserId())
+				.orElse(null);
+		if (ownIncident != null) {
+			return ownIncident;
+		}
+
+		if (currentUser.getRole() == UserRole.EMPLOYEE
+				&& taskRepository.existsByIncident_IncidentIdAndAssignedTo_UserId(incidentId, currentUser.getUserId())) {
+			return incidentRepository.findById(incidentId)
+					.orElseThrow(() -> new RuntimeException("Incident not found"));
+		}
+
+		throw new RuntimeException("Incident not found or access denied");
 	}
 
 	private IncidentSeverity calculateSeverity(Boolean urgent, Integer slaHours) {
@@ -95,7 +113,7 @@ public class IncidentServiceImpl implements IncidentService {
 		}
 
 		long effectiveMinutes = Boolean.TRUE.equals(urgent) ? Math.max(1L, baseMinutes / 2L) : baseMinutes;
-		return reportedAt.plusMinutes(effectiveMinutes);
+		return DateTimeUtils.truncateToSeconds(reportedAt.plusMinutes(effectiveMinutes));
 	}
 
 	@Override
@@ -112,7 +130,7 @@ public class IncidentServiceImpl implements IncidentService {
 		incident.setReportedBy(currentUser);
 		incident.setCategory(category);
 		incident.setUrgent(Boolean.TRUE.equals(dto.getUrgent()));
-		LocalDateTime reportedAt = LocalDateTime.now();
+		LocalDateTime reportedAt = DateTimeUtils.nowTruncatedToSeconds();
 		incident.setReportedDate(reportedAt);
 		incident.setSlaDueAt(calculateSlaDueAt(category, reportedAt, incident.getUrgent()));
 		IncidentSeverity severity = calculateSeverity(incident.getUrgent(), category.getSlaTimeHours());
@@ -170,12 +188,20 @@ public class IncidentServiceImpl implements IncidentService {
 
 	@Override
 	public IncidentResponseDTO getIncidentDetails(Long incidentId) {
-		User currentUser = securityService.getCurrentUser()
-				.orElseThrow(() -> new RuntimeException("Authentication required"));
+		User currentUser = getCurrentUserRequired();
 		Incident incident = incidentRepository.findByIncidentIdAndReportedBy_UserId(incidentId, currentUser.getUserId())
 				.orElseThrow(() -> new RuntimeException("Incident not found or access denied"));
 		return mapToResponseDTO(incident);
 
+	}
+
+	@Override
+	public IncidentResponseDTO getIncidentDetailsForTaskContext(Long incidentId) {
+		User currentUser = getCurrentUserRequired();
+		Incident incident = currentUser.getRole() == UserRole.ADMIN || currentUser.getRole() == UserRole.MANAGER
+				? getPrivilegedAccessibleIncident(incidentId, currentUser)
+				: getTaskAccessibleIncident(incidentId, currentUser);
+		return mapToResponseDTO(incident);
 	}
 
 	@Override
@@ -203,7 +229,7 @@ public class IncidentServiceImpl implements IncidentService {
 		}
 
 		incident.setStatus(IncidentStatus.CANCELLED);
-		incident.setResolvedDate(LocalDateTime.now());
+		incident.setResolvedDate(DateTimeUtils.nowTruncatedToSeconds());
 		Incident saved = incidentRepository.save(incident);
 
 		notificationService.notifyManagersUrgentOrCancelled(incident);
@@ -330,7 +356,7 @@ public class IncidentServiceImpl implements IncidentService {
 
 		IncidentStatus oldStatus = incident.getStatus();
 		incident.setStatus(request.getStatus());
-		incident.setResolvedDate(LocalDateTime.now());
+		incident.setResolvedDate(DateTimeUtils.nowTruncatedToSeconds());
 
 		Incident saved = incidentRepository.save(incident);
 		if (saved.getStatus() == IncidentStatus.RESOLVED) {

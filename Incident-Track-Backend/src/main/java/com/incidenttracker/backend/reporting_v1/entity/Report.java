@@ -3,6 +3,7 @@ package com.incidenttracker.backend.reporting_v1.entity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.incidenttracker.backend.common.util.DateTimeUtils;
 import com.incidenttracker.backend.reporting_v1.enums.ReportScope;
 import com.incidenttracker.backend.reporting_v1.enums.ReportType;
 import com.incidenttracker.backend.user.entity.User;
@@ -85,7 +86,7 @@ public class Report {
 
     @PrePersist
     void onCreate() {
-        generatedAt = LocalDateTime.now();
+        generatedAt = DateTimeUtils.nowTruncatedToSeconds();
     }
 }
 

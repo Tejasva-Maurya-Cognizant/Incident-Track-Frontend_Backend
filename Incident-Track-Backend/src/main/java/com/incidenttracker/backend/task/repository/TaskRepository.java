@@ -14,6 +14,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     boolean existsByIncident_IncidentId(Long incidentId);
 
+    boolean existsByIncident_IncidentIdAndAssignedTo_UserId(Long incidentId, Long assignedToUserId);
+
     Optional<Task> findByTaskIdAndIncident_Category_Department_DepartmentId(Long taskId, Long departmentId);
 
     // Returns the task linked to a specific incident id.

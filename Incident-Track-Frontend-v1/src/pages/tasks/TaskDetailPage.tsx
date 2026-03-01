@@ -1,9 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { tasksApi } from "../../features/tasks/api";
-import { authApi } from "../../features/auth/api";
 import type { TaskResponseDTO, TaskStatus } from "../../features/tasks/types";
-import type { UserResponseDto } from "../../features/auth/types";
 import { useAuth } from "../../context/AuthContext";
 import TaskStatusBadge from "../../components/common/TaskStatusBadge";
 
@@ -21,12 +19,11 @@ function InfoRow({ label, children }: { label: string; children: React.ReactNode
     );
 }
 
-function UserChip({ userId, userMap }: { userId: number; userMap: Record<number, UserResponseDto> }) {
-    const u = userMap[userId];
-    if (!u) return <span className="font-mono text-slate-400 text-xs">#{userId}</span>;
+function UserChip({ userId, username }: { userId: number; username?: string | null }) {
+    if (!username) return <span className="font-mono text-slate-400 text-xs">#{userId}</span>;
     return (
         <span className="text-xs font-medium text-slate-900">
-            {u.username} <span className="text-[10px] text-slate-400 font-mono">#{u.userId}</span>
+            {username} <span className="text-slate-400 font-mono">#{userId}</span>
         </span>
     );
 }
@@ -44,23 +41,12 @@ export default function TaskDetailPage() {
     const [data, setData] = useState<TaskResponseDTO | null>(null);
     const [loading, setLoading] = useState(true);
     const [err, setErr] = useState<string | null>(null);
-    const [userMap, setUserMap] = useState<Record<number, UserResponseDto>>({});
 
     const [newStatus, setNewStatus] = useState<TaskStatus>("IN_PROGRESS");
     const [updating, setUpdating] = useState(false);
     const [updateErr, setUpdateErr] = useState<string | null>(null);
     const [updateOk, setUpdateOk] = useState(false);
     const [updatedToStatus, setUpdatedToStatus] = useState<TaskStatus | null>(null);
-
-    const loadUserInfo = async (assignedTo: number, assignedBy: number) => {
-        const ids = [...new Set([assignedTo, assignedBy])];
-        const results = await Promise.allSettled(ids.map((uid) => authApi.getUserById(uid)));
-        const map: Record<number, UserResponseDto> = {};
-        results.forEach((r, i) => {
-            if (r.status === "fulfilled") map[ids[i]] = r.value;
-        });
-        setUserMap(map);
-    };
 
     const load = async () => {
         setLoading(true);
@@ -83,7 +69,6 @@ export default function TaskDetailPage() {
             }
             setData(res);
             setNewStatus(res.status === "PENDING" ? "IN_PROGRESS" : res.status === "IN_PROGRESS" ? "COMPLETED" : res.status);
-            loadUserInfo(res.assignedTo, res.assignedBy);
         } catch (e: any) {
             setErr(e?.response?.data?.message ?? "Failed to load task");
         } finally {
@@ -181,7 +166,7 @@ export default function TaskDetailPage() {
                 {/* 2-column field grid */}
                 <div className="grid grid-cols-1 gap-x-6 gap-y-0 md:grid-cols-2">
                     <InfoRow label="Incident">
-                        <Link to={`/incidents/${data.incidentId}`} className="text-[#175FFA] hover:underline font-mono text-xs">
+                        <Link to={`/incidents/${data.incidentId}?fromTask=true`} className="text-[#175FFA] hover:underline font-mono text-xs">
                             #{data.incidentId}
                         </Link>
                     </InfoRow>
@@ -189,10 +174,10 @@ export default function TaskDetailPage() {
                         <TaskStatusBadge status={data.status} />
                     </InfoRow>
                     <InfoRow label="Assigned To">
-                        <UserChip userId={data.assignedTo} userMap={userMap} />
+                        <UserChip userId={data.assignedTo} username={data.assignedToUsername} />
                     </InfoRow>
                     <InfoRow label="Assigned By">
-                        <UserChip userId={data.assignedBy} userMap={userMap} />
+                        <UserChip userId={data.assignedBy} username={data.assignedByUsername} />
                     </InfoRow>
                     <InfoRow label="Created">{fmtDate(data.createdDate)}</InfoRow>
                     <InfoRow label="Due Date">{fmtDate(data.dueDate)}</InfoRow>

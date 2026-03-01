@@ -26,6 +26,8 @@ public interface IncidentService {
 
 	IncidentResponseDTO getIncidentDetails(Long userId);
 
+	IncidentResponseDTO getIncidentDetailsForTaskContext(Long incidentId);
+
 	IncidentResponseDTO getIncidentDetailsForAdmin(Long incidentId);
 
 	IncidentResponseDTO withdrawIncident(Long userId);

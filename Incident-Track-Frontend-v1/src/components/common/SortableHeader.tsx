@@ -1,3 +1,5 @@
+import { TABLE_HEADER_CELL_CLASS } from "./TablePrimitives";
+
 interface SortableHeaderProps {
     label: string;
     field: string;
@@ -19,7 +21,7 @@ export default function SortableHeader({
 
     return (
         <th
-            className={`text-left px-2 py-2 cursor-pointer select-none whitespace-nowrap text-xs uppercase tracking-wide text-slate-500 ${className}`}
+            className={`${TABLE_HEADER_CELL_CLASS} text-left cursor-pointer select-none whitespace-nowrap ${className}`}
             onClick={() => onSort(field)}
         >
             <span className="inline-flex items-center gap-1 group">

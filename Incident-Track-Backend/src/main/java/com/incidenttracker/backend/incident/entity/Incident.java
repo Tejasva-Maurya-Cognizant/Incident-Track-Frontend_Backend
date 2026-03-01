@@ -3,6 +3,7 @@ package com.incidenttracker.backend.incident.entity;
 import java.time.LocalDateTime;
 
 import com.incidenttracker.backend.category.entity.Category;
+import com.incidenttracker.backend.common.util.DateTimeUtils;
 import com.incidenttracker.backend.common.enums.IncidentSeverity;
 import com.incidenttracker.backend.common.enums.IncidentStatus;
 import com.incidenttracker.backend.user.entity.User;
@@ -71,7 +72,7 @@ public class Incident {
     @PrePersist
     protected void onCreate() {
         if (this.reportedDate == null) {
-            this.reportedDate = LocalDateTime.now();
+            this.reportedDate = DateTimeUtils.nowTruncatedToSeconds();
         }
         if (this.status == null) {
             this.status = IncidentStatus.OPEN;

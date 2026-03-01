@@ -97,6 +97,12 @@ export const incidentsApi = {
     return res.data;
   },
 
+  // Detail from task navigation (employee can view when a task for this incident is assigned to them)
+  getByIdTaskAccess: async (incidentId: number) => {
+    const res = await api.get<IncidentResponseDTO>(`${BASE}/task-access/${incidentId}`);
+    return res.data;
+  },
+
   getByIdAdminManager: async (incidentId: number) => {
     const res = await api.get<IncidentResponseDTO>(`${BASE}/admin-manager/${incidentId}`);
     return res.data;

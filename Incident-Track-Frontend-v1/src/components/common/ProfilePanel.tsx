@@ -217,7 +217,8 @@ export default function ProfilePanel({ open, onClose }: Props) {
                 className="relative w-full bg-white rounded-[12px] shadow-2xl overflow-hidden flex flex-col"
                 style={{
                     maxWidth: 620,
-                    height: "min(480px, 90vh)",
+                    minHeight: "min(480px, 90vh)",
+                    maxHeight: "min(560px, 92vh)",
                     animation: "profilePopIn 0.2s cubic-bezier(0.16,1,0.3,1) both",
                 }}
             >
