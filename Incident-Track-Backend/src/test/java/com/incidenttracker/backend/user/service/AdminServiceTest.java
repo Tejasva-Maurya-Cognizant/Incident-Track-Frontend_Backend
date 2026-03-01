@@ -43,44 +43,46 @@ class AdminServiceTest {
 
     // Marks a method as a test case.
     @Test
-    // Test: runs the deactivateUser_setsInactiveWhenActive scenario and checks expected outputs/side effects.
-    void deactivateUser_setsInactiveWhenActive() {
+    // Test: runs the toggleUserStatus_setsInactiveWhenActive scenario and checks expected outputs/side effects.
+    void toggleUserStatus_setsInactiveWhenActive() {
         User user = new User();
         user.setUserId(1L);
         user.setStatus(UserStatus.ACTIVE);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        ResponseEntity<String> response = adminService.deactivateUser(1L);
+        ResponseEntity<String> response = adminService.toggleUserStatus(1L);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("User deactivated successfully", response.getBody());
+        assertEquals("User status toggled to INACTIVE", response.getBody());
         assertEquals(UserStatus.INACTIVE, user.getStatus());
         verify(userRepository).save(user);
     }
 
     @Test
-    // Test: runs the deactivateUser_returnsAlreadyInactiveWhenInactive scenario and checks expected outputs/side effects.
-    void deactivateUser_returnsAlreadyInactiveWhenInactive() {
+    // Test: runs the toggleUserStatus_setsActiveWhenInactive scenario and checks expected outputs/side effects.
+    void toggleUserStatus_setsActiveWhenInactive() {
         User user = new User();
         user.setUserId(2L);
         user.setStatus(UserStatus.INACTIVE);
 
         when(userRepository.findById(2L)).thenReturn(Optional.of(user));
 
-        ResponseEntity<String> response = adminService.deactivateUser(2L);
+        ResponseEntity<String> response = adminService.toggleUserStatus(2L);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("User is already InActive", response.getBody());
+        assertEquals("User status toggled to ACTIVE", response.getBody());
+        assertEquals(UserStatus.ACTIVE, user.getStatus());
+        verify(userRepository).save(user);
     }
 
     @Test
-    // Test: runs the deactivateUser_throwsNotFoundWhenMissing scenario and checks expected outputs/side effects.
-    void deactivateUser_throwsNotFoundWhenMissing() {
+    // Test: runs the toggleUserStatus_throwsNotFoundWhenMissing scenario and checks expected outputs/side effects.
+    void toggleUserStatus_throwsNotFoundWhenMissing() {
         when(userRepository.findById(3L)).thenReturn(Optional.empty());
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> adminService.deactivateUser(3L));
+                () -> adminService.toggleUserStatus(3L));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }

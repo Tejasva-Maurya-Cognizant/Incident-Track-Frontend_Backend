@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -22,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.incidenttracker.backend.audit_v1.entity.IncidentSlaBreach;
 import com.incidenttracker.backend.audit_v1.repository.IncidentSlaBreachRepository;
 import com.incidenttracker.backend.audit_v1.service.AuditService;
+import com.incidenttracker.backend.category.entity.Category;
 import com.incidenttracker.backend.common.enums.ActionType;
 import com.incidenttracker.backend.common.enums.BreachStatus;
 import com.incidenttracker.backend.common.enums.IncidentStatus;
@@ -29,6 +29,7 @@ import com.incidenttracker.backend.common.enums.TaskStatus;
 import com.incidenttracker.backend.common.enums.UserRole;
 import com.incidenttracker.backend.common.exception.BadRequestException;
 import com.incidenttracker.backend.common.security.SecurityService;
+import com.incidenttracker.backend.department.entity.Department;
 import com.incidenttracker.backend.incident.entity.Incident;
 import com.incidenttracker.backend.incident.repository.IncidentRepository;
 import com.incidenttracker.backend.notification.service.NotificationService;
@@ -83,15 +84,29 @@ class TaskServiceImplTest {
 
         Incident incident = new Incident();
         incident.setIncidentId(300L);
+        incident.setStatus(IncidentStatus.OPEN);
         incident.setSlaDueAt(LocalDateTime.of(2026, 2, 7, 10, 0));
+        Department department = new Department();
+        department.setDepartmentId(10L);
+        Category category = new Category();
+        category.setDepartment(department);
+        incident.setCategory(category);
 
         User assignedTo = new User();
         assignedTo.setUserId(200L);
+        assignedTo.setRole(UserRole.EMPLOYEE);
+        assignedTo.setDepartment(department);
+        assignedTo.setUsername("tech-user");
 
         User currentUser = new User();
         currentUser.setUserId(101L);
+        currentUser.setRole(UserRole.MANAGER);
+        currentUser.setDepartment(department);
+        currentUser.setUsername("manager-user");
 
         when(incidentRepository.findById(300L)).thenReturn(Optional.of(incident));
+        when(incidentRepository.save(any(Incident.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(taskRepository.existsByIncident_IncidentId(300L)).thenReturn(false);
         when(userRepository.findById(200L)).thenReturn(Optional.of(assignedTo));
         when(securityService.getCurrentUser()).thenReturn(Optional.of(currentUser));
         when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> {
@@ -122,6 +137,11 @@ class TaskServiceImplTest {
         assignedTo.setUserId(501L);
         User assignedBy = new User();
         assignedBy.setUserId(502L);
+        assignedBy.setUsername("manager");
+
+        User currentUser = new User();
+        currentUser.setUserId(1L);
+        currentUser.setRole(UserRole.ADMIN);
 
         Task task = Task.builder()
                 .taskId(10L)
@@ -135,6 +155,7 @@ class TaskServiceImplTest {
                 .incident(incident)
                 .build();
 
+        when(securityService.getCurrentUser()).thenReturn(Optional.of(currentUser));
         when(taskRepository.findById(10L)).thenReturn(Optional.of(task));
 
         TaskResponseDto response = taskService.getTaskByTaskId(10L);
@@ -150,10 +171,16 @@ class TaskServiceImplTest {
     void updateTaskStatus_inProgress_byManagerAssignedBy() {
         Incident incident = new Incident();
         incident.setIncidentId(700L);
+        Department department = new Department();
+        department.setDepartmentId(11L);
+        Category category = new Category();
+        category.setDepartment(department);
+        incident.setCategory(category);
 
         User manager = new User();
         manager.setUserId(900L);
         manager.setRole(UserRole.MANAGER);
+        manager.setDepartment(department);
 
         User assignedTo = new User();
         assignedTo.setUserId(901L);
@@ -207,7 +234,6 @@ class TaskServiceImplTest {
         when(taskRepository.findById(8L)).thenReturn(Optional.of(task));
         when(securityService.getCurrentUser()).thenReturn(Optional.of(employee));
         when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(taskRepository.findByIncident_IncidentId(800L)).thenReturn(List.of(task));
         when(incidentRepository.save(any(Incident.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(breachRepository.findByIncident_IncidentId(800L)).thenReturn(Optional.of(breach));
 

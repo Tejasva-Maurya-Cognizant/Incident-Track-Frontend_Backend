@@ -96,7 +96,7 @@ class IncidentSlaBreachRepositoryTest {
         incident.setReportedBy(reporter);
         incident.setDescription(description);
         incident.setCalculatedSeverity(IncidentSeverity.LOW);
-        incident.setIsCritical(false);
+        incident.setUrgent(false);
         entityManager.persist(incident);
         entityManager.flush();
         return incident;

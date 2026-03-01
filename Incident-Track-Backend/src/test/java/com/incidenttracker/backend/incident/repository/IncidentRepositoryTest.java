@@ -148,7 +148,7 @@ class IncidentRepositoryTest {
 
         i.setCalculatedSeverity(severity);
 
-        i.setIsCritical(false);
+        i.setUrgent(false);
 
         // 1. Initial Save (Triggers @PrePersist -> sets Status to OPEN)
 
@@ -240,22 +240,22 @@ class IncidentRepositoryTest {
 
     @DisplayName("4. Find by User ID and Critical Flag")
 
-    void testFindByReportedBy_UserIdAndIsCritical() {
+    void testFindByReportedBy_UserIdAndUrgent() {
 
         Incident crit = createIncident(user1, categorySoftware, "Critical", IncidentStatus.OPEN, IncidentSeverity.HIGH);
 
-        crit.setIsCritical(true);
+        crit.setUrgent(true);
 
         incidentRepository.save(crit);
 
         Incident nonCrit = createIncident(user1, categorySoftware, "Normal", IncidentStatus.OPEN,
                 IncidentSeverity.HIGH);
 
-        nonCrit.setIsCritical(false);
+        nonCrit.setUrgent(false);
 
         incidentRepository.save(nonCrit);
 
-        List<Incident> result = incidentRepository.findByReportedBy_UserIdAndIsCritical(
+        List<Incident> result = incidentRepository.findByReportedBy_UserIdAndUrgent(
 
                 user1.getUserId(), true);
 

@@ -3,6 +3,7 @@ package com.incidenttracker.backend.audit_v1.repository;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -41,10 +42,10 @@ class AuditLogRepositoryTest {
         Incident incident = persistIncident("Audit incident");
         String userToken = unique();
         User user = persistUser("audit-user-" + userToken, "audit-user-" + userToken + "@example.com");
+        LocalDateTime baseTime = LocalDateTime.of(2026, 3, 1, 10, 0, 0);
 
-        AuditLog older = persistAuditLog(incident, user, ActionType.INCIDENT_CREATED, "created");
-        sleepBriefly();
-        AuditLog newer = persistAuditLog(incident, user, ActionType.INCIDENT_UPDATED, "updated");
+        AuditLog older = persistAuditLog(incident, user, ActionType.INCIDENT_CREATED, "created", baseTime);
+        AuditLog newer = persistAuditLog(incident, user, ActionType.INCIDENT_UPDATED, "updated", baseTime.plusSeconds(1));
 
         List<AuditLog> result = auditLogRepository
                 .findByIncident_IncidentIdOrderByTimestampDesc(incident.getIncidentId());
@@ -60,12 +61,12 @@ class AuditLogRepositoryTest {
         Incident incident = persistIncident("Action incident");
         String userToken = unique();
         User user = persistUser("action-user-" + userToken, "action-user-" + userToken + "@example.com");
+        LocalDateTime baseTime = LocalDateTime.of(2026, 3, 1, 11, 0, 0);
 
-        AuditLog matchOlder = persistAuditLog(incident, user, ActionType.TASK_CREATED, "task created");
-        sleepBriefly();
-        AuditLog matchNewer = persistAuditLog(incident, user, ActionType.TASK_CREATED, "task created again");
-        sleepBriefly();
-        persistAuditLog(incident, user, ActionType.NOTE_ADDED, "note added");
+        AuditLog matchOlder = persistAuditLog(incident, user, ActionType.TASK_CREATED, "task created", baseTime);
+        AuditLog matchNewer = persistAuditLog(incident, user, ActionType.TASK_CREATED, "task created again",
+                baseTime.plusSeconds(1));
+        persistAuditLog(incident, user, ActionType.NOTE_ADDED, "note added", baseTime.plusSeconds(2));
 
         List<AuditLog> result = auditLogRepository.findByActionTypeOrderByTimestampDesc(ActionType.TASK_CREATED);
 
@@ -75,12 +76,14 @@ class AuditLogRepositoryTest {
         assertEquals(matchOlder.getLogId(), result.get(1).getLogId());
     }
 
-    private AuditLog persistAuditLog(Incident incident, User user, ActionType actionType, String details) {
+    private AuditLog persistAuditLog(Incident incident, User user, ActionType actionType, String details,
+            LocalDateTime timestamp) {
         AuditLog log = new AuditLog();
         log.setIncident(incident);
         log.setUser(user);
         log.setActionType(actionType);
         log.setDetails(details);
+        log.setTimestamp(timestamp);
         entityManager.persist(log);
         entityManager.flush();
         return log;
@@ -106,7 +109,7 @@ class AuditLogRepositoryTest {
         incident.setReportedBy(reporter);
         incident.setDescription(description);
         incident.setCalculatedSeverity(IncidentSeverity.LOW);
-        incident.setIsCritical(false);
+        incident.setUrgent(false);
         entityManager.persist(incident);
         entityManager.flush();
         return incident;
@@ -127,13 +130,4 @@ class AuditLogRepositoryTest {
     private String unique() {
         return String.valueOf(System.nanoTime());
     }
-
-    private void sleepBriefly() {
-        try {
-            Thread.sleep(5);
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
 }

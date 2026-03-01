@@ -62,6 +62,8 @@ import com.incidenttracker.backend.incident.service.impl.IncidentServiceImpl;
 
 import com.incidenttracker.backend.notification.service.NotificationService;
 
+import com.incidenttracker.backend.task.repository.TaskRepository;
+
 import com.incidenttracker.backend.user.entity.User;
 
 // Enable Mockito annotations (@Mock/@InjectMocks) for this test class.
@@ -93,6 +95,10 @@ class IncidentServiceImplTest {
 
     private NotificationService notificationService;
 
+    @Mock
+
+    private TaskRepository taskRepository;
+
     // Injects mocks into the class under test.
     @InjectMocks
 
@@ -118,6 +124,8 @@ class IncidentServiceImplTest {
         mockUser = new User();
 
         mockUser.setUserId(1L);
+
+        mockUser.setRole(com.incidenttracker.backend.common.enums.UserRole.EMPLOYEE);
 
         mockUser.setUsername("test_user");
 
@@ -147,7 +155,7 @@ class IncidentServiceImplTest {
 
         mockIncident.setCalculatedSeverity(IncidentSeverity.HIGH);
 
-        mockIncident.setIsCritical(false);
+        mockIncident.setUrgent(false);
 
         mockIncident.setReportedDate(LocalDateTime.now());
 
@@ -191,7 +199,7 @@ class IncidentServiceImplTest {
 
         request.setDescription("Mouse Broken");
 
-        request.setIsCritical(false);
+        request.setUrgent(false);
 
         when(categoryRepository.findById(101L)).thenReturn(Optional.of(mockCategory));
 
@@ -228,7 +236,7 @@ class IncidentServiceImplTest {
         verify(auditService).log(any(Incident.class), eq(mockUser), eq(ActionType.INCIDENT_CREATED), anyString());
 
         verify(notificationService).notifyAllManager(any(Incident.class));
-        verify(notificationService).notifyManagersCriticalOrCancelled(any(Incident.class));
+        verify(notificationService).notifyManagersUrgentOrCancelled(any(Incident.class));
 
     }
 
@@ -246,7 +254,7 @@ class IncidentServiceImplTest {
 
         request.setDescription("Server on Fire");
 
-        request.setIsCritical(true); // <--- Critical Override
+        request.setUrgent(true); // <--- Urgent Override
 
         when(categoryRepository.findById(101L)).thenReturn(Optional.of(mockCategory));
 
@@ -370,13 +378,13 @@ class IncidentServiceImplTest {
 
     @DisplayName("Get Incidents by Critical Flag - Success")
 
-    void getIncidentsByUserAndUserMarkedCritical_Success() {
+    void getIncidentsByUserAndUrgent_Success() {
 
-        when(incidentRepository.findByReportedBy_UserIdAndIsCritical(mockUser.getUserId(), false))
+        when(incidentRepository.findByReportedBy_UserIdAndUrgent(mockUser.getUserId(), false))
 
                 .thenReturn(List.of(mockIncident));
 
-        List<IncidentResponseDTO> result = incidentService.getIncidentsByUserAndUserMarkedCritical(false);
+        List<IncidentResponseDTO> result = incidentService.getIncidentsByUserAndUrgent(false);
 
         assertEquals(1, result.size());
 
@@ -424,7 +432,7 @@ class IncidentServiceImplTest {
 
         verify(auditService).log(any(), eq(mockUser), eq(ActionType.INCIDENT_WITHDRAWN), anyString());
 
-        verify(notificationService).notifyManagersCriticalOrCancelled(any(Incident.class));
+        verify(notificationService).notifyManagersUrgentOrCancelled(any(Incident.class));
 
     }
 
@@ -517,9 +525,9 @@ class IncidentServiceImplTest {
 
     @Test
 
-    @DisplayName("Update Status - Success: In Progress (Does NOT close Breach)")
+    @DisplayName("Update Status - Fail: In Progress is not allowed manually")
 
-    void updateIncidentStatus_InProgress_NoBreachAction() {
+    void updateIncidentStatus_InProgress_ThrowsIllegalState() {
 
         // Arrange
 
@@ -529,25 +537,22 @@ class IncidentServiceImplTest {
 
         when(incidentRepository.findById(500L)).thenReturn(Optional.of(mockIncident));
 
-        when(incidentRepository.save(any(Incident.class))).thenAnswer(i -> i.getArgument(0));
+        // Act + Assert
 
-        // Act
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> incidentService.updateIncidentStatus(500L, dto));
 
-        IncidentResponseDTO result = incidentService.updateIncidentStatus(500L, dto);
+        assertEquals("Incident status can only be changed manually to RESOLVED or CANCELLED.", ex.getMessage());
 
-        // Assert
-
-        assertEquals(IncidentStatus.IN_PROGRESS, result.getStatus());
-
-        // Breach interaction should NEVER happen for IN_PROGRESS
+        // Breach interaction should NEVER happen for rejected transitions
 
         verify(breachRepository, never()).findByIncident_IncidentId(anyLong());
 
         verify(breachRepository, never()).save(any());
 
-        // Only 1 audit log (Status Changed)
+        // No audit log should be written for rejected transitions
 
-        verify(auditService, times(1)).log(any(), eq(mockUser), eq(ActionType.INCIDENT_STATUS_CHANGED), anyString());
+        verify(auditService, never()).log(any(), eq(mockUser), eq(ActionType.INCIDENT_STATUS_CHANGED), anyString());
 
     }
 

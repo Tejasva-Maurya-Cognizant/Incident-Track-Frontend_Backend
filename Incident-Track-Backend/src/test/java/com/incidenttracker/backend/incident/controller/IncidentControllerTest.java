@@ -87,31 +87,18 @@ class IncidentControllerTest {
 
         // Prepare a standard response object to be used in multiple tests
 
-        mockResponseDTO = new IncidentResponseDTO(
-
-                1L,
-
-                101L,
-
-                "System crash",
-
-                55L,
-
-                "john_doe",
-
-                IncidentStatus.OPEN,
-
-                IncidentSeverity.HIGH,
-
-                false,
-
-                LocalDateTime.now(),
-
-                "Hardware",
-
-                4
-
-        );
+        mockResponseDTO = new IncidentResponseDTO();
+        mockResponseDTO.setIncidentId(1L);
+        mockResponseDTO.setCategoryId(101L);
+        mockResponseDTO.setDescription("System crash");
+        mockResponseDTO.setUserId(55L);
+        mockResponseDTO.setUsername("john_doe");
+        mockResponseDTO.setStatus(IncidentStatus.OPEN);
+        mockResponseDTO.setCalculatedSeverity(IncidentSeverity.HIGH);
+        mockResponseDTO.setUrgent(false);
+        mockResponseDTO.setReportedDate(LocalDateTime.now());
+        mockResponseDTO.setCategoryName("Hardware");
+        mockResponseDTO.setSlaHours(4);
 
     }
 
@@ -296,11 +283,11 @@ class IncidentControllerTest {
 
     void getCriticalIncidents_Success() throws Exception {
 
-        mockResponseDTO.setIsCritical(true);
+        mockResponseDTO.setUrgent(true);
 
         List<IncidentResponseDTO> list = Arrays.asList(mockResponseDTO);
 
-        when(incidentService.getIncidentsByUserAndUserMarkedCritical(Boolean.TRUE))
+        when(incidentService.getIncidentsByUserAndUrgent(Boolean.TRUE))
 
                 .thenReturn(list);
 
@@ -308,7 +295,7 @@ class IncidentControllerTest {
 
                 .andExpect(status().isOk())
 
-                .andExpect(jsonPath("$[0].isCritical").value(true));
+                .andExpect(jsonPath("$[0].urgent").value(true));
 
     }
 
@@ -392,7 +379,7 @@ class IncidentControllerTest {
 
         when(incidentService.getAllIncidents()).thenReturn(list);
 
-        mockMvc.perform(get("/api/incidents/admin"))
+        mockMvc.perform(get("/api/incidents/admin-manager/all"))
 
                 .andExpect(status().isOk())
 

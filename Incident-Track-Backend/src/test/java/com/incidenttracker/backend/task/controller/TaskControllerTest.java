@@ -299,7 +299,7 @@ class TaskControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isOk())
-                                .andExpect(content().string("Incident status updated"));
+                                .andExpect(content().string("Task status updated"));
 
                 verify(taskService).updateTaskStatus(42L, "COMPLETED");
         }

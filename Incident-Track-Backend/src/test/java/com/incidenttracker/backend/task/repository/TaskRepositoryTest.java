@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,20 +52,18 @@ class TaskRepositoryTest {
     @Test
     // Test: runs the findByIncidentIncidentId_returnsTasks scenario and checks
     // expected outputs/side effects.
-    void findByIncidentIncidentId_returnsTasks() {
+    void findByIncidentIncidentId_returnsTask() {
         Incident incident = persistIncident("Network issue");
         User assignedTo = persistUser("tech1", "tech1@example.com");
         User assignedBy = persistUser("mgr1", "mgr1@example.com");
 
         // This line creates and persists a Task entity with the title "T1", associated with the specified incident, assignedTo user, assignedBy user, and a status of PENDING. The persistTask method handles the creation and persistence of the Task entity in the in-memory database, allowing us to set up the necessary data for our test case.
-        Task task1 = persistTask("T1", incident, assignedTo, assignedBy, TaskStatus.PENDING, null); // Persists task setup data used by this query test.
-        Task task2 = persistTask("T2", incident, assignedTo, assignedBy, TaskStatus.IN_PROGRESS, null);
+        Task task = persistTask("T1", incident, assignedTo, assignedBy, TaskStatus.PENDING, null); // Persists task setup data used by this query test.
 
-        List<Task> result = taskRepository.findByIncident_IncidentId(incident.getIncidentId());
+        Optional<Task> result = taskRepository.findByIncident_IncidentId(incident.getIncidentId());
 
-        List<Long> ids = result.stream().map(Task::getTaskId).toList();
-        assertTrue(ids.contains(task1.getTaskId()));
-        assertTrue(ids.contains(task2.getTaskId()));
+        assertTrue(result.isPresent());
+        assertEquals(task.getTaskId(), result.get().getTaskId());
     }
 
     @Test
@@ -180,7 +179,7 @@ class TaskRepositoryTest {
         incident.setReportedBy(reporter);
         incident.setDescription(description);
         incident.setCalculatedSeverity(IncidentSeverity.LOW);
-        incident.setIsCritical(false);
+        incident.setUrgent(false);
         entityManager.persist(incident);
         entityManager.flush();
         return incident;

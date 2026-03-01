@@ -101,22 +101,26 @@ class AuthControllerTest {
         User user = new User();
         user.setUserId(1L);
         user.setEmail("alice@example.com");
+        user.setUsername("alice");
+        user.setRole(UserRole.EMPLOYEE);
         user.setStatus(UserStatus.ACTIVE);
 
         when(authManager.authenticate(any(Authentication.class))).thenReturn(null);
         when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(user));
-        when(jwtUtil.generateToken("alice@example.com")).thenReturn("token-123");
+        when(jwtUtil.generateToken("alice@example.com", UserRole.EMPLOYEE.name(), 1L)).thenReturn("token-123");
 
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("token-123"))
+                .andExpect(jsonPath("$.username").value("alice"))
                 .andExpect(jsonPath("$.email").value("alice@example.com"))
-                .andExpect(jsonPath("$.userId").value(1L));
+                .andExpect(jsonPath("$.userId").value(1L))
+                .andExpect(jsonPath("$.role").value("EMPLOYEE"));
 
         verify(userRepository).findByEmail("alice@example.com");
-        verify(jwtUtil).generateToken("alice@example.com");
+        verify(jwtUtil).generateToken("alice@example.com", UserRole.EMPLOYEE.name(), 1L);
     }
 
     @Test
@@ -139,9 +143,9 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.token").doesNotExist())
-                .andExpect(jsonPath("$.email").value("Account is deactivated"))
-                .andExpect(jsonPath("$.userId").doesNotExist());
+                .andExpect(jsonPath("$.token").isEmpty())
+                .andExpect(jsonPath("$.username").value("Account is deactivated"))
+                .andExpect(jsonPath("$.userId").isEmpty());
 
         verify(userRepository).findByEmail("bob@example.com");
     }
@@ -249,15 +253,15 @@ class AuthControllerTest {
     }
 
     @Test
-    // Test: runs the deactivateUser_delegatesToAdminService scenario and checks
+    // Test: runs the toggleUserStatus_delegatesToAdminService scenario and checks
     // expected outputs/side effects.
-    void deactivateUser_delegatesToAdminService() throws Exception {
-        when(adminService.deactivateUser(5L)).thenReturn(ResponseEntity.ok("User deactivated successfully"));
+    void toggleUserStatus_delegatesToAdminService() throws Exception {
+        when(adminService.toggleUserStatus(5L)).thenReturn(ResponseEntity.ok("User status toggled to INACTIVE"));
 
-        mockMvc.perform(patch("/api/auth/deactivateUser/{id}", 5L))
+        mockMvc.perform(patch("/api/auth/toggleUserStatus/{id}", 5L))
                 .andExpect(status().isOk());
 
-        verify(adminService).deactivateUser(5L);
+        verify(adminService).toggleUserStatus(5L);
     }
 
     @Test

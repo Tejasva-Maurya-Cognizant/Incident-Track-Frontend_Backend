@@ -69,15 +69,15 @@ class NotificationServiceTest {
 	@DisplayName("subscribe() - Should create and return SseEmitter")
 	void shouldReturnEmitterWhenUserSubscribes() {
 		// Arrange
-		when(securityService.getCurrentUser()).thenReturn(Optional.of(mockUser));
+		when(securityService.getCurrentUserIdFromToken()).thenReturn(1L);
 
 		// Act
 		SseEmitter emitter = notificationService.subscribe();
 
 		// Assert
 		assertNotNull(emitter);
-		assertEquals(1800000L, emitter.getTimeout());
-		verify(securityService).getCurrentUser();
+		assertEquals(300000L, emitter.getTimeout());
+		verify(securityService).getCurrentUserIdFromToken();
 	}
 
 	// Verify notification creation saves to DB (Request DTO still provides target
@@ -116,7 +116,7 @@ class NotificationServiceTest {
 		n1.setUser(mockUser);
 		n1.setMessage("Message 1");
 
-		when(securityService.getCurrentUser()).thenReturn(Optional.of(mockUser));
+		when(securityService.getCurrentUserIdFromToken()).thenReturn(1L);
 		when(notificationRepository.findByUser_UserIdOrderByCreatedDateTimeDesc(1L))
 				.thenReturn(List.of(n1));
 
@@ -137,7 +137,7 @@ class NotificationServiceTest {
 		n.setUser(mockUser);
 		n.setStatus(NotificationStatus.UNREAD);
 
-		when(securityService.getCurrentUser()).thenReturn(Optional.of(mockUser));
+		when(securityService.getCurrentUserIdFromToken()).thenReturn(1L);
 		when(notificationRepository.findUnreadNotifications(1L)).thenReturn(List.of(n));
 
 		// Act
@@ -172,7 +172,7 @@ class NotificationServiceTest {
 	@DisplayName("markAllAsRead()")
 	void shouldMarkAllNotificationsAsRead() {
 		// Arrange
-		when(securityService.getCurrentUser()).thenReturn(Optional.of(mockUser));
+		when(securityService.getCurrentUserIdFromToken()).thenReturn(1L);
 
 		// Act
 		notificationService.markAllAsRead();
@@ -263,8 +263,8 @@ class NotificationServiceTest {
 	}
 
 	@Test
-	@DisplayName("notifyManagersCriticalOrCancelled() - Critical case")
-	void shouldNotifyManagersWhenIncidentIsCritical() {
+	@DisplayName("notifyManagersUrgentOrCancelled() - Urgent case")
+	void shouldNotifyManagersWhenIncidentIsUrgent() {
 		// Arrange
 		Department dept = new Department();
 		dept.setDepartmentId(1L);
@@ -272,7 +272,7 @@ class NotificationServiceTest {
 		cat.setDepartment(dept);
 		Incident incident = new Incident();
 		incident.setCategory(cat);
-		incident.setIsCritical(true);
+		incident.setUrgent(true);
 
 		User manager = new User();
 		manager.setUserId(4L);
@@ -285,7 +285,7 @@ class NotificationServiceTest {
 		when(notificationRepository.save(any(Notification.class))).thenReturn(saved);
 
 		// Act
-		notificationService.notifyManagersCriticalOrCancelled(incident);
+		notificationService.notifyManagersUrgentOrCancelled(incident);
 
 		// Assert
 		verify(notificationRepository).save(any(Notification.class));

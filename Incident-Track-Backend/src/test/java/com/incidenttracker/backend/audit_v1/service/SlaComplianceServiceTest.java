@@ -72,7 +72,7 @@ class SlaComplianceServiceTest {
         assertTrue(breach.getIncident() == incident);
         assertTrue(breach.getSlaDueAt().equals(dueAt));
         assertTrue(breach.getBreachStatus() == BreachStatus.OPEN);
-        assertTrue("Incident not resolved within SLA time".equals(breach.getReason()));
+        assertTrue("Incident not resolved within the effective SLA deadline".equals(breach.getReason()));
 
         verify(incidentRepository).save(incident);
         verify(notificationService).notifySlaBreached(incident);

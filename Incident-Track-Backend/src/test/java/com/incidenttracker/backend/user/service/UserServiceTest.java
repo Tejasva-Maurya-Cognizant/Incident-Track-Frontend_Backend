@@ -51,6 +51,9 @@ class UserServiceTest {
         user.setPassword("password");
         user.setRole(UserRole.EMPLOYEE);
         user.setStatus(UserStatus.ACTIVE);
+        Department department = new Department();
+        department.setDepartmentId(10L);
+        user.setDepartment(department);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
@@ -77,8 +80,12 @@ class UserServiceTest {
     void getAllUsers_returnsOkWhenNotEmpty() {
         User u1 = new User();
         u1.setUserId(1L);
+        Department department = new Department();
+        department.setDepartmentId(11L);
+        u1.setDepartment(department);
         User u2 = new User();
         u2.setUserId(2L);
+        u2.setDepartment(department);
 
         when(userRepository.findAll()).thenReturn(List.of(u1, u2));
 
@@ -104,7 +111,11 @@ class UserServiceTest {
     // Test: runs the getUsersByRole_returnsOkWhenNotEmpty scenario and checks
     // expected outputs/side effects.
     void getUsersByRole_returnsOkWhenNotEmpty() {
-        when(userRepository.findByRole(UserRole.MANAGER)).thenReturn(List.of(new User()));
+        User manager = new User();
+        Department department = new Department();
+        department.setDepartmentId(12L);
+        manager.setDepartment(department);
+        when(userRepository.findByRole(UserRole.MANAGER)).thenReturn(List.of(manager));
 
         List<UserResponseDto> response = userService.getUsersByRole(UserRole.MANAGER);
 
@@ -128,7 +139,11 @@ class UserServiceTest {
     // Test: runs the getUsersByDepartment_returnsOkWhenNotEmpty scenario and checks
     // expected outputs/side effects.
     void getUsersByDepartment_returnsOkWhenNotEmpty() {
-        when(userRepository.findByDepartment_DepartmentId(5L)).thenReturn(List.of(new User()));
+        User user = new User();
+        Department department = new Department();
+        department.setDepartmentId(5L);
+        user.setDepartment(department);
+        when(userRepository.findByDepartment_DepartmentId(5L)).thenReturn(List.of(user));
 
         List<UserResponseDto> response = userService.getUsersByDepartment(5L);
 
@@ -197,6 +212,7 @@ class UserServiceTest {
 
         User emp1 = new User();
         emp1.setUserId(2L);
+        emp1.setDepartment(dept);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(manager));
         when(userRepository.findByRoleAndDepartment_DepartmentId(UserRole.EMPLOYEE, 7L))
