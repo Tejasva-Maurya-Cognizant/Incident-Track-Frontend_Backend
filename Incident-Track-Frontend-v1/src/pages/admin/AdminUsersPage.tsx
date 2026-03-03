@@ -409,7 +409,7 @@ export default function AdminUsersPage() {
                                     <SortableHeader label="Username" field="username" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-36" />
                                     <SortableHeader label="Email" field="email" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-52" />
                                     <TableHeaderCell className="w-24">Role</TableHeaderCell>
-                                    <SortableHeader label="Department" field="departmentId" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-32" />
+                                    <SortableHeader label="Department" field="department.departmentName" sortBy={params.sortBy} sortDir={params.sortDir} onSort={handleSort} className="w-32" />
                                     <TableHeaderCell className="w-24">Status</TableHeaderCell>
                                     <TableHeaderCell className="w-36">Actions</TableHeaderCell>
                                 </tr>
